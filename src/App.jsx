@@ -1,6 +1,58 @@
 import { useState, useRef, useEffect } from "react";
 
 // ═══════════════════════════════════════════════════════════════════
+// SUPABASE CONFIG
+// ═══════════════════════════════════════════════════════════════════
+const SUPABASE_URL = "https://ztgtrvodalesxqbmrrqd.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp0Z3Rydm9kYWxlc3hxYm1ycnFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk4NjkyMjYsImV4cCI6MjA2NTQ0NTIyNn0.eyJpc3MiOiJzdXBhYmFzZSJ9";
+
+async function sbFetch(path, opts = {}) {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+      ...opts,
+      headers: {
+        "apikey": SUPABASE_KEY,
+        "Authorization": `Bearer ${SUPABASE_KEY}`,
+        "Content-Type": "application/json",
+        "Prefer": "return=representation",
+        ...(opts.headers || {})
+      }
+    });
+    if (!res.ok) return null;
+    const text = await res.text();
+    return text ? JSON.parse(text) : [];
+  } catch { return null; }
+}
+
+async function syncUserToSupabase(username, password) {
+  try {
+    await sbFetch("users", {
+      method: "POST",
+      body: JSON.stringify({ username, password })
+    });
+  } catch {}
+}
+
+async function syncScoreToSupabase(username, quizId, score, total, correct) {
+  try {
+    await sbFetch(`quiz_progress?username=eq.${encodeURIComponent(username)}&quiz_id=eq.${encodeURIComponent(quizId)}`, {
+      method: "DELETE"
+    });
+    await sbFetch("quiz_progress", {
+      method: "POST",
+      body: JSON.stringify({
+        username,
+        quiz_id: quizId,
+        score,
+        total,
+        percentage: score,
+        completed_at: new Date().toISOString()
+      })
+    });
+  } catch {}
+}
+
+// ═══════════════════════════════════════════════════════════════════
 // MASTER REVIEW ACADEMY v3
 // Professional Ethics: 200Q + 100Q
 // Curriculum: 200Q + 100Q
@@ -2108,12 +2160,20 @@ const ADMIN_USER = "crael";
 const ADMIN_PASS = "ftrc2024";
 
 // ═══════════════════════════════════════════════════════════════════
-// STORAGE — per-user isolation
+// STORAGE — per-user isolation + Supabase sync
 // ═══════════════════════════════════════════════════════════════════
 function useStorage(username) {
   const prefix = username ? `mra_${username}_` : "mra_guest_";
   const get = (key) => { try { return JSON.parse(localStorage.getItem(prefix + key)) || null; } catch { return null; } };
-  const set = (key, val) => { try { localStorage.setItem(prefix + key, JSON.stringify(val)); } catch {} };
+  const set = (key, val) => {
+    try {
+      localStorage.setItem(prefix + key, JSON.stringify(val));
+      if (key.startsWith("quiz_") && username && val?.score !== undefined) {
+        const quizId = key.replace("quiz_", "");
+        syncScoreToSupabase(username, quizId, val.score, val.total, val.correct).catch(() => {});
+      }
+    } catch {}
+  };
   const getGlobal = (key) => { try { return JSON.parse(localStorage.getItem("mra_" + key)) || null; } catch { return null; } };
   const setGlobal = (key, val) => { try { localStorage.setItem("mra_" + key, JSON.stringify(val)); } catch {} };
   return { get, set, getGlobal, setGlobal };
@@ -2286,6 +2346,7 @@ function AuthScreen({ onLogin }) {
     if (users[user.trim()]) { setErr("Username already taken."); return; }
     users[user.trim()] = { pass, createdAt: new Date().toISOString() };
     saveUsers(users);
+    syncUserToSupabase(user.trim(), pass).catch(() => {});
     setOk("Account created! You can now log in.");
     setMode("login"); setPass(""); setPass2("");
   }
