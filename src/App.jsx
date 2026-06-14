@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 // SUPABASE CONFIG
 // ═══════════════════════════════════════════════════════════════════
 const SUPABASE_URL = "https://ztgtrvodalesxqbmrrqd.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp0Z3Rydm9kYWxlc3hxYm1ycnFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk4NjkyMjYsImV4cCI6MjA2NTQ0NTIyNn0.eyJpc3MiOiJzdXBhYmFzZSJ9";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp0Z3Rydm9kYWxlc3hxYm1ycnFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0MjU3MDgsImV4cCI6MjA5NzAwMTcwOH0.k7mQyT1gmnSG9pnycjUj7f6xcwTCKgHErOQUHGV5gFg";
 
 async function sbFetch(path, opts = {}) {
   try {
