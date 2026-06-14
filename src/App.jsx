@@ -2806,13 +2806,27 @@ function QuizEngine({ rawQuestions, title, quizId, accentColor, onExit, username
 // MAIN APP
 // ═══════════════════════════════════════════════════════════════════
 export default function MasterReviewAcademy() {
-  const [user,     setUser]     = useState(null);
-  const [isAdmin,  setIsAdmin]  = useState(false);
-  const [view,     setView]     = useState("home");
-  const [activeQ,  setActiveQ]  = useState(null);
+  // ── Persist login across refresh ──────────────────────────────
+  const savedSession = (() => {
+    try { return JSON.parse(localStorage.getItem("mra_session")) || {}; } catch { return {}; }
+  })();
+
+  const [user,     setUser]     = useState(savedSession.user     || null);
+  const [isAdmin,  setIsAdmin]  = useState(savedSession.isAdmin  || false);
+  const [view,     setView]     = useState(savedSession.view     || "home");
+  const [activeQ,  setActiveQ]  = useState(null); // never restore mid-quiz on refresh
   const [filterS,  setFilterS]  = useState("all");
   const [search,   setSearch]   = useState("");
   const [master350,setMaster350]= useState(null);
+
+  // Save session to localStorage whenever it changes
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem("mra_session", JSON.stringify({ user, isAdmin, view }));
+    } else {
+      localStorage.removeItem("mra_session");
+    }
+  }, [user, isAdmin, view]);
 
   const storage = useStorage(user);
 
@@ -2821,6 +2835,7 @@ export default function MasterReviewAcademy() {
   }
   function handleLogout() {
     setUser(null); setIsAdmin(false); setView("home"); setActiveQ(null);
+    localStorage.removeItem("mra_session");
   }
 
   function getData(id) { return storage.get(`quiz_${id}`); }
