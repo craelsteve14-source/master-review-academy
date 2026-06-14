@@ -1,4 +1,26 @@
-import { useState, useRef, useEffect } from "react";
+// ═══════════════════════════════════════════════════════════════════
+// SUPABASE CONFIG
+// ═══════════════════════════════════════════════════════════════════
+const SUPABASE_URL = "https://ztgtrvodalesxqbmrrqd.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp0Z3RydodalGVzeHFibXJycWQiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc0OTg2OTIyNiwiZXhwIjoyMDY1NDQ1MjI2fQ.eyJpc3MiOiJzdXBhYmFzZSJ9";
+
+async function sbFetch(path, opts = {}) {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+      ...opts,
+      headers: {
+        "apikey": SUPABASE_KEY,
+        "Authorization": `Bearer ${SUPABASE_KEY}`,
+        "Content-Type": "application/json",
+        "Prefer": "return=representation",
+        ...(opts.headers || {})
+      }
+    });
+    if (!res.ok) return null;
+    const text = await res.text();
+    return text ? JSON.parse(text) : [];
+  } catch { return null; }
+}import { useState, useRef, useEffect } from "react";
 
 // ═══════════════════════════════════════════════════════════════════
 // MASTER REVIEW ACADEMY v3
@@ -2112,11 +2134,55 @@ const ADMIN_PASS = "ftrc2024";
 // ═══════════════════════════════════════════════════════════════════
 function useStorage(username) {
   const prefix = username ? `mra_${username}_` : "mra_guest_";
-  const get = (key) => { try { return JSON.parse(localStorage.getItem(prefix + key)) || null; } catch { return null; } };
-  const set = (key, val) => { try { localStorage.setItem(prefix + key, JSON.stringify(val)); } catch {} };
+
+  // Local fallback
+  const lGet = (key) => { try { return JSON.parse(localStorage.getItem(prefix + key)) || null; } catch { return null; } };
+  const lSet = (key, val) => { try { localStorage.setItem(prefix + key, JSON.stringify(val)); } catch {} };
+
+  // Save to Supabase (fire-and-forget, non-blocking)
+  async function sbSave(key, val) {
+    if (!username) return;
+    if (key.startsWith("quiz_")) {
+      const quizId = key.replace("quiz_", "");
+      await sbFetch("quiz_progress", {
+        method: "POST",
+        headers: { "Prefer": "resolution=merge-duplicates,return=representation" },
+        body: JSON.stringify({
+          username,
+          quiz_id: quizId,
+          score: val.score,
+          total: val.total,
+          percentage: val.score,
+          completed_at: new Date().toISOString()
+        })
+      });
+    }
+  }
+
+  // Load from Supabase (async, with local cache fallback)
+  async function sbLoad(key) {
+    if (!username) return null;
+    if (key.startsWith("quiz_")) {
+      const quizId = key.replace("quiz_", "");
+      const rows = await sbFetch(`quiz_progress?username=eq.${username}&quiz_id=eq.${quizId}&select=score,total,completed_at`);
+      if (rows && rows.length > 0) {
+        return { score: rows[0].score, total: rows[0].total, date: rows[0].completed_at };
+      }
+    }
+    return null;
+  }
+
+  const get = (key) => lGet(key);
+
+  const set = (key, val) => {
+    lSet(key, val);        // always save locally first (instant)
+    sbSave(key, val);      // then sync to cloud (async, non-blocking)
+  };
+
   const getGlobal = (key) => { try { return JSON.parse(localStorage.getItem("mra_" + key)) || null; } catch { return null; } };
   const setGlobal = (key, val) => { try { localStorage.setItem("mra_" + key, JSON.stringify(val)); } catch {} };
-  return { get, set, getGlobal, setGlobal };
+
+  return { get, set, getGlobal, setGlobal, sbLoad };
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -2264,7 +2330,15 @@ function AuthScreen({ onLogin }) {
   const [ok, setOk]       = useState("");
 
   function getUsers() { try { return JSON.parse(localStorage.getItem("mra_users")) || {}; } catch { return {}; } }
-  function saveUsers(u) { localStorage.setItem("mra_users", JSON.stringify(u)); }
+function saveUsers(u) { localStorage.setItem("mra_users", JSON.stringify(u)); }
+
+async function syncUserToSupabase(username, password) {
+  await sbFetch("users", {
+    method: "POST",
+    headers: { "Prefer": "resolution=ignore-duplicates,return=representation" },
+    body: JSON.stringify({ username, password, created_at: new Date().toISOString() })
+  });
+}
 
   function handleLogin() {
     setErr(""); setOk("");
@@ -2285,7 +2359,7 @@ function AuthScreen({ onLogin }) {
     const users = getUsers();
     if (users[user.trim()]) { setErr("Username already taken."); return; }
     users[user.trim()] = { pass, createdAt: new Date().toISOString() };
-    saveUsers(users);
+    saveUsers(users);syncUserToSupabase(user.trim(), pass);
     setOk("Account created! You can now log in.");
     setMode("login"); setPass(""); setPass2("");
   }
