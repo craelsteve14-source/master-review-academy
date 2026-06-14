@@ -20,7 +20,9 @@ async function sbFetch(path, opts = {}) {
     const text = await res.text();
     return text ? JSON.parse(text) : [];
   } catch { return null; }
-}import { useState, useRef, useEffect } from "react";
+}
+
+import { useState, useRef, useEffect } from "react";
 
 // ═══════════════════════════════════════════════════════════════════
 // MASTER REVIEW ACADEMY v3
