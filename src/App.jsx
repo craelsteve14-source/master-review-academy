@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from "react";
 // ═══════════════════════════════════════════════════════════════════
 // SUPABASE CONFIG
 // ═══════════════════════════════════════════════════════════════════
@@ -22,7 +23,7 @@ async function sbFetch(path, opts = {}) {
   } catch { return null; }
 }
 
-import { useState, useRef, useEffect } from "react";
+
 
 // ═══════════════════════════════════════════════════════════════════
 // MASTER REVIEW ACADEMY v3
