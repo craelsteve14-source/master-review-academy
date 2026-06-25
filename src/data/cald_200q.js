@@ -1,4 +1,4 @@
-const CALD_200 = [
+export const CALD_200 = [
   // ==================== EASY (60) ====================
   {id:"cald-001",d:"easy",t:"Growth and Development",q:"Which of the following best describes GROWTH?",c:["A. Qualitative changes in the organism as a whole","B. Quantitative changes in size, weight, and number","C. Changes that occur from womb to tomb","D. Changes in the quality of a person's skills"],a:"B",e:"Growth refers to quantitative, observable changes such as increases in size, weight, height, and number — things that can be measured."},
   {id:"cald-002",d:"easy",t:"Growth and Development",q:"Development is best described as:",c:["A. Changes that stop at the attainment of maturity","B. Changes limited to the physical aspects of the body","C. Qualitative changes in the organism as a whole, possible even without growth","D. Observable increases in a person's height and weight"],a:"C",e:"Development describes qualitative changes in the whole organism — it is a continuous process from womb to tomb and can occur even without physical growth."},
