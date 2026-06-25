@@ -1,4 +1,13 @@
 import { useState, useRef, useEffect } from "react";
+import { CALD_200 } from "./data/cald_200q";
+import { CALD_100 } from "./data/cald_100q";
+import { CALD_50 }  from "./data/cald_50q";
+import { AOL_200 }  from "./data/aol_200q";
+import { AOL_100 }  from "./data/aol_100q";
+import { AOL_50 }   from "./data/aol_50q";
+import { IE_200 }   from "./data/ie_200q";
+import { IE_100 }   from "./data/ie_100q";
+import { IE_50 }    from "./data/ie_50q";
 
 // ═══════════════════════════════════════════════════════════════════
 // SUPABASE CONFIG
@@ -2127,30 +2136,40 @@ const QUIZ_REGISTRY = [
   { id:"methods-100",   subjId:"methods",   title:"Methods & Strategies — 100Q Focused Review",
     desc:"100 focused questions on PPST domains, career stages, classroom strategies, and student behavior.",
     questions:METHODS_100,   easy:30, moderate:50,  difficult:20, color:"#fbbf24", icon:"🎓" },
+  { id:"cald-200", subjId:"cald", title:"Child & Adolescent Learners — 200Q Master Review", desc:"Comprehensive review of growth, development, and learning theories.", questions:CALD_200, easy:60, moderate:100, difficult:40, color:"#10b981", icon:"🧠" },
+  { id:"cald-100", subjId:"cald", title:"Child & Adolescent Learners — 100Q Practice Exam", desc:"Practice exam covering developmental theories and learning principles.", questions:CALD_100, easy:30, moderate:50, difficult:20, color:"#10b981", icon:"🧠" },
+  { id:"cald-50",  subjId:"cald", title:"Child & Adolescent Learners — 50Q Quick Review", desc:"Quick review of key CALD concepts.", questions:CALD_50, easy:15, moderate:25, difficult:10, color:"#10b981", icon:"🧠" },
+  { id:"aol-200", subjId:"aol", title:"Assessment of Learning — 200Q Master Review", desc:"Comprehensive review of TMAE, rubrics, item analysis, and statistics.", questions:AOL_200, easy:60, moderate:100, difficult:40, color:"#f59e0b", icon:"📊" },
+  { id:"aol-100", subjId:"aol", title:"Assessment of Learning — 100Q Practice Exam", desc:"Practice exam covering assessment principles and K-12 grading.", questions:AOL_100, easy:30, moderate:50, difficult:20, color:"#f59e0b", icon:"📊" },
+  { id:"aol-50",  subjId:"aol", title:"Assessment of Learning — 50Q Quick Review", desc:"Quick review of key AOL concepts.", questions:AOL_50, easy:15, moderate:25, difficult:10, color:"#f59e0b", icon:"📊" },
+  { id:"ie-200", subjId:"ie", title:"Inclusive Education — 200Q Master Review", desc:"Comprehensive review of IE laws, IDEA categories, IEP, co-teaching, and action research.", questions:IE_200, easy:60, moderate:100, difficult:40, color:"#8b5cf6", icon:"🌈" },
+  { id:"ie-100", subjId:"ie", title:"Inclusive Education — 100Q Practice Exam", desc:"Practice exam covering disability categories and Philippine IE laws.", questions:IE_100, easy:30, moderate:50, difficult:20, color:"#8b5cf6", icon:"🌈" },
+  { id:"ie-50",  subjId:"ie", title:"Inclusive Education — 50Q Quick Review", desc:"Quick review of key IE concepts.", questions:IE_50, easy:15, moderate:25, difficult:10, color:"#8b5cf6", icon:"🌈" },
 ];
 
 const SUBJECTS = [
   { id:"ethics",     name:"Professional Ethics",               color:"#6366f1", icon:"⚖️", desc:"Ethical theories, moral frameworks, conscience, and professional ethics." },
   { id:"curriculum", name:"The Teacher & The School Curriculum",color:"#10b981", icon:"📚", desc:"Curriculum foundations, development, design models, and evaluation." },
   { id:"methods",    name:"Methods, Strategies & Field Study", color:"#f59e0b", icon:"🎓", desc:"Teaching approaches, classroom management, PPST, learning theories." },
+  { id:"cald", name:"Child & Adolescent Learners", color:"#10b981", icon:"🧠", desc:"Growth & development, learning theories, and developmental stages." },
+  { id:"aol",  name:"Assessment of Learning", color:"#f59e0b", icon:"📊", desc:"TMAE concepts, portfolio, rubrics, item analysis, and statistics." },
+  { id:"ie",   name:"Inclusive Education", color:"#8b5cf6", icon:"🌈", desc:"IE laws, IDEA categories, IEP, co-teaching, and action research." },
 ];
 
 // ── MASTER 350Q — sampled proportionally from all 600Q ────────────
 function buildMaster350() {
-  function sample(arr, n) {
-    const s = [...arr]; const out = [];
-    for (let i = 0; i < n && s.length; i++) {
-      const j = Math.floor(Math.random() * s.length);
-      out.push({ ...s[j], _src: "master" });
-      s.splice(j, 1);
-    }
-    return out;
-  }
-  return [
-    ...sample(ETHICS_200,    117),
-    ...sample(CURRICULUM_200,117),
-    ...sample(METHODS_200,   116),
+  const pools = [
+    { bank: ETHICS_200,     n: 59 },
+    { bank: CURRICULUM_200, n: 58 },
+    { bank: METHODS_200,    n: 58 },
+    { bank: CALD_200,       n: 58 },
+    { bank: AOL_200,        n: 58 },
+    { bank: IE_200,         n: 59 },
   ];
+  const selected = pools.flatMap(({ bank, n }) =>
+    shuffle([...bank]).slice(0, n)
+  );
+  return buildOrder(shuffle(selected));
 }
 
 // ═══════════════════════════════════════════════════════════════════
