@@ -2137,40 +2137,52 @@ const QUIZ_REGISTRY = [
   { id:"methods-100",   subjId:"methods",   title:"Methods & Strategies — 100Q Focused Review",
     desc:"100 focused questions on PPST domains, career stages, classroom strategies, and student behavior.",
     questions:METHODS_100,   easy:30, moderate:50,  difficult:20, color:"#fbbf24", icon:"🎓" },
-  { id:"cald-200", subjId:"cald", title:"Child & Adolescent Learners — 200Q Master Review", desc:"Comprehensive review of growth, development, and learning theories.", questions:CALD_200, easy:60, moderate:100, difficult:40, color:"#10b981", icon:"🧠" },
-  { id:"cald-100", subjId:"cald", title:"Child & Adolescent Learners — 100Q Practice Exam", desc:"Practice exam covering developmental theories and learning principles.", questions:CALD_100, easy:30, moderate:50, difficult:20, color:"#10b981", icon:"🧠" },
-  { id:"cald-50",  subjId:"cald", title:"Child & Adolescent Learners — 50Q Quick Review", desc:"Quick review of key CALD concepts.", questions:CALD_50, easy:15, moderate:25, difficult:10, color:"#10b981", icon:"🧠" },
-  { id:"aol-200", subjId:"aol", title:"Assessment of Learning — 200Q Master Review", desc:"Comprehensive review of TMAE, rubrics, item analysis, and statistics.", questions:AOL_200, easy:60, moderate:100, difficult:40, color:"#f59e0b", icon:"📊" },
-  { id:"aol-100", subjId:"aol", title:"Assessment of Learning — 100Q Practice Exam", desc:"Practice exam covering assessment principles and K-12 grading.", questions:AOL_100, easy:30, moderate:50, difficult:20, color:"#f59e0b", icon:"📊" },
-  { id:"aol-50",  subjId:"aol", title:"Assessment of Learning — 50Q Quick Review", desc:"Quick review of key AOL concepts.", questions:AOL_50, easy:15, moderate:25, difficult:10, color:"#f59e0b", icon:"📊" },
-  { id:"ie-200", subjId:"ie", title:"Inclusive Education — 200Q Master Review", desc:"Comprehensive review of IE laws, IDEA categories, IEP, co-teaching, and action research.", questions:IE_200, easy:60, moderate:100, difficult:40, color:"#8b5cf6", icon:"🌈" },
-  { id:"ie-100", subjId:"ie", title:"Inclusive Education — 100Q Practice Exam", desc:"Practice exam covering disability categories and Philippine IE laws.", questions:IE_100, easy:30, moderate:50, difficult:20, color:"#8b5cf6", icon:"🌈" },
-  { id:"ie-50",  subjId:"ie", title:"Inclusive Education — 50Q Quick Review", desc:"Quick review of key IE concepts.", questions:IE_50, easy:15, moderate:25, difficult:10, color:"#8b5cf6", icon:"🌈" },
+  {id:"english100",subjId:"english",category:"gened",title:"Purposive Communication in English — 100Q",desc:"Grammar, vocabulary, idioms, sentence correction & communication",questions:ENGLISH_100,easy:30,moderate:50,difficult:20,color:"#3b82f6",icon:"📘"},
+  {id:"filipino-100",subjId:"filipino",category:"gened",title:"Malayuning Komunikasyon sa Filipino — 100Q",desc:"Ponolohiya, morpolohiya, pangungusap, tayutay at higit pa",questions:FILIPINO_100,easy:30,moderate:50,difficult:20,color:"#f59e0b",icon:"🇵🇭"},
+  {id:"science50",subjId:"science",category:"gened",title:"Science and Technology — 50Q",desc:"Earth science, physics, environment, tech & innovation",questions:SCIENCE_50,easy:15,moderate:25,difficult:10,color:"#10b981",icon:"🔬"},
+  {id:"math100",subjId:"math",category:"gened",title:"Mathematics — 100Q",desc:"Number theory, fractions, decimals, geometry, statistics & more",questions:MATH_100,easy:30,moderate:50,difficult:20,color:"#6366f1",icon:"📐"},
+  {id:"socsci50",subjId:"socsci",category:"gened",title:"Social Science — 50Q",desc:"Philippine history, education history & government",questions:SOCSCI_50,easy:15,moderate:25,difficult:10,color:"#ef4444",icon:"🏛"},
+  {id:"rizal15",subjId:"rizal",category:"gened",title:"Life and Works of Rizal — 15Q",desc:"Rizal's works, philosophies and contributions to the nation",questions:RIZAL_15,easy:4,moderate:8,difficult:3,color:"#ec4899",icon:"📖"},
+  {id:"ethics2-80",subjId:"ethics2",category:"gened",title:"Ethics (GEN ED) — 80Q",desc:"Ethical theories, moral decision-making, values & the Good",questions:ETHICS_80,easy:20,moderate:40,difficult:20,color:"#14b8a6",icon:"⚖️"},
+  {id:"contemp50",subjId:"contemp",category:"gened",title:"The Contemporary World — 50Q",desc:"Globalization, sustainable development & global issues",questions:CONTEMP_50,easy:15,moderate:25,difficult:10,color:"#8b5cf6",icon:"🌏"},
+  {id:"artapp50",subjId:"artapp",category:"gened",title:"Art Appreciation — 50Q",desc:"Art forms, movements, elements, Philippine arts & culture",questions:ARTAPP_50,easy:15,moderate:25,difficult:10,color:"#f97316",icon:"🎨"},
 ];
 
 const SUBJECTS = [
   { id:"ethics",     name:"Professional Ethics",               color:"#6366f1", icon:"⚖️", desc:"Ethical theories, moral frameworks, conscience, and professional ethics." },
   { id:"curriculum", name:"The Teacher & The School Curriculum",color:"#10b981", icon:"📚", desc:"Curriculum foundations, development, design models, and evaluation." },
   { id:"methods",    name:"Methods, Strategies & Field Study", color:"#f59e0b", icon:"🎓", desc:"Teaching approaches, classroom management, PPST, learning theories." },
-  { id:"cald", name:"Child & Adolescent Learners", color:"#10b981", icon:"🧠", desc:"Growth & development, learning theories, and developmental stages." },
-  { id:"aol",  name:"Assessment of Learning", color:"#f59e0b", icon:"📊", desc:"TMAE concepts, portfolio, rubrics, item analysis, and statistics." },
-  { id:"ie",   name:"Inclusive Education", color:"#8b5cf6", icon:"🌈", desc:"IE laws, IDEA categories, IEP, co-teaching, and action research." },
+  {id:"english",name:"Purposive Communication in English",color:"#3b82f6",icon:"📘",desc:"Grammar, vocabulary, idioms & effective communication"},
+  {id:"filipino",name:"Malayuning Komunikasyon sa Filipino",color:"#f59e0b",icon:"🇵🇭",desc:"Ponolohiya, morpolohiya, at komunikasyon sa Filipino"},
+  {id:"science",name:"Science and Technology",color:"#10b981",icon:"🔬",desc:"Earth science, physics, environment & technology"},
+  {id:"math",name:"Mathematics",color:"#6366f1",icon:"📐",desc:"Number theory, algebra, geometry & statistics"},
+  {id:"socsci",name:"Social Science",color:"#ef4444",icon:"🏛",desc:"Philippine history, society & governance"},
+  {id:"rizal",name:"Life and Works of Rizal",color:"#ec4899",icon:"📖",desc:"Rizal's works, philosophies & national contributions"},
+  {id:"ethics2",name:"Ethics (GEN ED)",color:"#14b8a6",icon:"⚖️",desc:"Ethical theories, values & moral decision-making"},
+  {id:"contemp",name:"The Contemporary World",color:"#8b5cf6",icon:"🌏",desc:"Globalization, sustainability & global issues"},
+  {id:"artapp",name:"Art Appreciation",color:"#f97316",icon:"🎨",desc:"Art forms, movements & Philippine culture"},
 ];
 
 // ── MASTER 350Q — sampled proportionally from all 600Q ────────────
 function buildMaster350() {
-  const pools = [
-    { bank: ETHICS_200,     n: 59 },
-    { bank: CURRICULUM_200, n: 58 },
-    { bank: METHODS_200,    n: 58 },
-    { bank: CALD_200,       n: 58 },
-    { bank: AOL_200,        n: 58 },
-    { bank: IE_200,         n: 59 },
+  const profEdPool = [
+    ...shuffle([...ETHICS_200]).slice(0,44),
+    ...shuffle([...CURRICULUM_200]).slice(0,44),
+    ...shuffle([...METHODS_200]).slice(0,44),
+
   ];
-  const selected = pools.flatMap(({ bank, n }) =>
-    shuffle([...bank]).slice(0, n)
-  );
-  return buildOrder(shuffle(selected));
+  const genEdPool = [
+    ...shuffle(ENGLISH_100).slice(0,12),
+    ...shuffle(FILIPINO_100).slice(0,12),
+    ...shuffle(SCIENCE_50).slice(0,8),
+    ...shuffle(MATH_100).slice(0,12),
+    ...shuffle(SOCSCI_50).slice(0,8),
+    ...shuffle(RIZAL_15).slice(0,5),
+    ...shuffle(ETHICS_80).slice(0,10),
+    ...shuffle(CONTEMP_50).slice(0,8),
+    ...shuffle(ARTAPP_50).slice(0,8),
+  ];
+  return buildOrder(shuffle([...profEdPool, ...genEdPool]));
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -2657,6 +2669,41 @@ function AdminPanel({ onBack }) {
 // ═══════════════════════════════════════════════════════════════════
 // QUIZ ENGINE
 // ═══════════════════════════════════════════════════════════════════
+function LibraryGroup({ label, icon, subtitle, color, quizzes, storage, onStart }) {
+  const [open, setOpen] = React.useState(false);
+  return (
+    <div style={{marginBottom:12}}>
+      <button onClick={() => setOpen(o => !o)} style={{display:"flex",alignItems:"center",gap:12,width:"100%",padding:"14px 16px",borderRadius:14,border:`1px solid ${color}`,background:`linear-gradient(135deg, ${color}18, ${color}08)`,cursor:"pointer",marginBottom:open?8:0}}>
+        <span style={{fontSize:22}}>{icon}</span>
+        <div style={{flex:1,textAlign:"left"}}>
+          <div style={{fontSize:14,fontWeight:700,color:"#fff"}}>{label}</div>
+          <div style={{fontSize:11,color:"rgba(255,255,255,0.45)",marginTop:2}}>{subtitle} · {quizzes.length} quizzes</div>
+        </div>
+        <span style={{fontSize:13,color:"rgba(255,255,255,0.35)"}}>{open?"▼":"▶"}</span>
+      </button>
+      {open && (
+        <div style={{background:"#161616",borderRadius:12,padding:10,border:"1px solid #222"}}>
+          {quizzes.map(q => {
+            const done = storage?.get(`quiz_${q.id}`);
+            return (
+              <div key={q.id} onClick={() => onStart(q)} style={{display:"flex",alignItems:"center",gap:10,background:"#1a1a1a",borderRadius:10,padding:"10px 12px",marginBottom:8,border:"1px solid #222",cursor:"pointer"}}>
+                <div style={{width:36,height:36,borderRadius:9,background:`${q.color}18`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,flexShrink:0}}>{q.icon}</div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:12,fontWeight:600,color:"#eee",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{q.title}</div>
+                  <div style={{fontSize:10,color:"#555",marginTop:1}}>{q.desc}</div>
+                </div>
+                <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:3,flexShrink:0}}>
+                  <div style={{fontSize:10,fontWeight:700,padding:"2px 7px",borderRadius:10,background:`${q.color}18`,color:q.color}}>{q.questions.length}Q</div>
+                  {done && <div style={{fontSize:9,color:"#10b981"}}>✓ {done.score}%</div>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 function QuizEngine({ rawQuestions, title, quizId, accentColor, onExit, username }) {
   const storage = useStorage(username);
   const [questions]  = useState(() => buildOrder(rawQuestions));
@@ -3042,29 +3089,32 @@ export default function MasterReviewAcademy() {
   );
 
   // ── LIBRARY ───────────────────────────────────────────────────
-  if (view === "library") return (
-    <div style={{ background:BG, minHeight:"100vh", fontFamily:sf, color:TXT }}>
-      <NavBar title="Quiz Library"
-        left={<GhostBtn onClick={()=>{setView("home");setFilterS("all");}}>← Home</GhostBtn>}
-        right={<GhostBtn onClick={()=>setView("dashboard")}>Dashboard</GhostBtn>}
-      />
-      <div style={{ maxWidth:860, margin:"0 auto", padding:"28px 20px" }}>
-        {/* Search & Filter */}
-        <div style={{ display:"flex", gap:8, marginBottom:24, flexWrap:"wrap" }}>
-          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search quizzes..."
-            style={{ flex:1, minWidth:160, background:SURF, border:`1px solid ${BORDER}`, borderRadius:9,
-              padding:"9px 14px", fontSize:13, color:TXT, fontFamily:sf, outline:"none" }}/>
-          <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
-            {[{id:"all",label:"All"},...SUBJECTS.map(s=>({id:s.id,label:`${s.icon} ${s.name.split(" ")[1]||s.name}`}))].map(f=>(
-              <button key={f.id} onClick={()=>setFilterS(f.id)}
-                style={{ background:filterS===f.id?"#6366f1":SURF, color:filterS===f.id?"#fff":TXT2,
-                  border:`1px solid ${filterS===f.id?"#6366f1":BORDER}`, borderRadius:8,
-                  padding:"7px 12px", fontSize:12, cursor:"pointer", fontFamily:sf, fontWeight:500 }}>
-                {f.label}
-              </button>
-            ))}
-          </div>
-        </div>
+{view === "library" && (
+  <div style={{padding:"0 16px 100px"}}>
+    <div style={{paddingTop:20,paddingBottom:12}}>
+      <div style={{fontSize:22,fontWeight:800,color:"#fff"}}>Quiz Library</div>
+      <div style={{fontSize:13,color:"#666",marginTop:2}}>Tap a category to explore quizzes</div>
+    </div>
+    <LibraryGroup
+      label="Professional Education"
+      icon="📋"
+      subtitle="From physical handouts"
+      color="#10b981"
+      quizzes={QUIZ_REGISTRY.filter(q => !q.category || q.category === "profd")}
+      storage={storage}
+      onStart={startQuiz}
+    />
+    <LibraryGroup
+      label="General Education"
+      icon="🎓"
+      subtitle="Lorimar GEN ED 2023 — 595 questions"
+      color="#a78bfa"
+      quizzes={QUIZ_REGISTRY.filter(q => q.category === "gened")}
+      storage={storage}
+      onStart={startQuiz}
+    />
+  </div>
+)}
 
         {/* Master Banner */}
         <div onClick={()=>{setMaster350(buildMaster350());setActiveQ("master");}}
