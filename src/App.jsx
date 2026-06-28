@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from "react";
-import { IE_50 } from "./data/ie_50q";
 import { ENGLISH_100 } from './data/english_100q';
 import { FILIPINO_100 } from './data/filipino_100q';
 import { SCIENCE_50 } from './data/science_50q';
