@@ -1,13 +1,14 @@
 import { useState, useRef, useEffect } from "react";
-import { CALD_200 } from "./data/cald_200q";
-import { CALD_100 } from "./data/cald_100q";
-import { CALD_50 }  from "./data/cald_50q";
-import { AOL_200 }  from "./data/aol_200q";
-import { AOL_100 }  from "./data/aol_100q";
-import { AOL_50 }   from "./data/aol_50q";
-import { IE_200 }   from "./data/ie_200q";
-import { IE_100 }   from "./data/ie_100q";
-import { IE_50 }    from "./data/ie_50q";
+import { IE_50 } from "./data/ie_50q";
+import { ENGLISH_100 } from './data/english_100q';
+import { FILIPINO_100 } from './data/filipino_100q';
+import { SCIENCE_50 } from './data/science_50q';
+import { MATH_100 } from './data/math_100q';
+import { SOCSCI_50 } from './data/socsci_50q';
+import { RIZAL_15 } from './data/rizal_15q';
+import { ETHICS_80 } from './data/ethics_80q';
+import { CONTEMP_50 } from './data/contemp_50q';
+import { ARTAPP_50 } from './data/artapp_50q';
 
 // ═══════════════════════════════════════════════════════════════════
 // SUPABASE CONFIG
