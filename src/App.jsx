@@ -8,6 +8,9 @@ import { RIZAL_15 } from './data/rizal_15q';
 import { ETHICS_80 } from './data/ethics_80q';
 import { CONTEMP_50 } from './data/contemp_50q';
 import { ARTAPP_50 } from './data/artapp_50q';
+import { CHILDADO_50 } from './data/childado_50q';
+import { ASSESS_50 } from './data/assess_50q';
+import { INCLUSIVE_50 } from './data/inclusive_50q';
 
 // ═══════════════════════════════════════════════════════════════════
 // SUPABASE CONFIG
@@ -2136,6 +2139,15 @@ const QUIZ_REGISTRY = [
   { id:"methods-100",   subjId:"methods",   title:"Methods & Strategies — 100Q Focused Review",
     desc:"100 focused questions on PPST domains, career stages, classroom strategies, and student behavior.",
     questions:METHODS_100,   easy:30, moderate:50,  difficult:20, color:"#fbbf24", icon:"🎓" },
+  { id:"childado-50",   subjId:"childado",  title:"Child & Adolescent Learners — 50Q",
+    desc:"Growth & development, developmental stages, Freud, Erikson, Piaget, Vygotsky, Kohlberg, behaviorism & learning theories.",
+    questions:CHILDADO_50,   easy:15, moderate:25,  difficult:10, color:"#0ea5e9", icon:"🧠" },
+  { id:"assess-50",     subjId:"assess",    title:"Assessment of Learning — 50Q",
+    desc:"Assessment purposes & modes, test construction, validity & reliability, item analysis, statistics & K-12 grading.",
+    questions:ASSESS_50,     easy:15, moderate:25,  difficult:10, color:"#a855f7", icon:"📊" },
+  { id:"inclusive-50",  subjId:"inclusive", title:"Inclusive Education — 50Q",
+    desc:"Inclusive vs special needs education, types of disabilities, legal bases, co-teaching models & action research.",
+    questions:INCLUSIVE_50,  easy:15, moderate:25,  difficult:10, color:"#f43f5e", icon:"🤝" },
   {id:"english100",subjId:"english",category:"gened",title:"Purposive Communication in English — 100Q",desc:"Grammar, vocabulary, idioms, sentence correction & communication",questions:ENGLISH_100,easy:30,moderate:50,difficult:20,color:"#3b82f6",icon:"📘"},
   {id:"filipino-100",subjId:"filipino",category:"gened",title:"Malayuning Komunikasyon sa Filipino — 100Q",desc:"Ponolohiya, morpolohiya, pangungusap, tayutay at higit pa",questions:FILIPINO_100,easy:30,moderate:50,difficult:20,color:"#f59e0b",icon:"🇵🇭"},
   {id:"science50",subjId:"science",category:"gened",title:"Science and Technology — 50Q",desc:"Earth science, physics, environment, tech & innovation",questions:SCIENCE_50,easy:15,moderate:25,difficult:10,color:"#10b981",icon:"🔬"},
@@ -2151,6 +2163,9 @@ const SUBJECTS = [
   { id:"ethics",     name:"Professional Ethics",               color:"#6366f1", icon:"⚖️", desc:"Ethical theories, moral frameworks, conscience, and professional ethics." },
   { id:"curriculum", name:"The Teacher & The School Curriculum",color:"#10b981", icon:"📚", desc:"Curriculum foundations, development, design models, and evaluation." },
   { id:"methods",    name:"Methods, Strategies & Field Study", color:"#f59e0b", icon:"🎓", desc:"Teaching approaches, classroom management, PPST, learning theories." },
+  { id:"childado",   name:"Child & Adolescent Learners",       color:"#0ea5e9", icon:"🧠", desc:"Growth & development, developmental theories, and learning principles." },
+  { id:"assess",     name:"Assessment of Learning",            color:"#a855f7", icon:"📊", desc:"Assessment types, test construction, statistics, and K-12 grading." },
+  { id:"inclusive",  name:"Inclusive Education",               color:"#f43f5e", icon:"🤝", desc:"Inclusive education, disabilities, legal bases, and action research." },
   {id:"english",name:"Purposive Communication in English",color:"#3b82f6",icon:"📘",desc:"Grammar, vocabulary, idioms & effective communication"},
   {id:"filipino",name:"Malayuning Komunikasyon sa Filipino",color:"#f59e0b",icon:"🇵🇭",desc:"Ponolohiya, morpolohiya, at komunikasyon sa Filipino"},
   {id:"science",name:"Science and Technology",color:"#10b981",icon:"🔬",desc:"Earth science, physics, environment & technology"},
@@ -2669,7 +2684,7 @@ function AdminPanel({ onBack }) {
 // QUIZ ENGINE
 // ═══════════════════════════════════════════════════════════════════
 function LibraryGroup({ label, icon, subtitle, color, quizzes, storage, onStart }) {
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useState(false);
   return (
     <div style={{marginBottom:12}}>
       <button onClick={() => setOpen(o => !o)} style={{display:"flex",alignItems:"center",gap:12,width:"100%",padding:"14px 16px",borderRadius:14,border:`1px solid ${color}`,background:`linear-gradient(135deg, ${color}18, ${color}08)`,cursor:"pointer",marginBottom:open?8:0}}>
@@ -3088,32 +3103,51 @@ export default function MasterReviewAcademy() {
   );
 
   // ── LIBRARY ───────────────────────────────────────────────────
-{view === "library" && (
-  <div style={{padding:"0 16px 100px"}}>
-    <div style={{paddingTop:20,paddingBottom:12}}>
-      <div style={{fontSize:22,fontWeight:800,color:"#fff"}}>Quiz Library</div>
-      <div style={{fontSize:13,color:"#666",marginTop:2}}>Tap a category to explore quizzes</div>
-    </div>
-    <LibraryGroup
-      label="Professional Education"
-      icon="📋"
-      subtitle="From physical handouts"
-      color="#10b981"
-      quizzes={QUIZ_REGISTRY.filter(q => !q.category || q.category === "profd")}
-      storage={storage}
-      onStart={startQuiz}
-    />
-    <LibraryGroup
-      label="General Education"
-      icon="🎓"
-      subtitle="Lorimar GEN ED 2023 — 595 questions"
-      color="#a78bfa"
-      quizzes={QUIZ_REGISTRY.filter(q => q.category === "gened")}
-      storage={storage}
-      onStart={startQuiz}
-    />
-  </div>
-)}
+  if (view === "library") return (
+    <div style={{ background:BG, minHeight:"100vh", fontFamily:sf, color:TXT }}>
+      <NavBar title="Quiz Library"
+        left={<GhostBtn onClick={()=>{setView("home");setFilterS("all");}}>← Home</GhostBtn>}
+        right={<GhostBtn onClick={()=>setView("dashboard")}>Dashboard</GhostBtn>}
+      />
+      <div style={{ maxWidth:860, margin:"0 auto", padding:"28px 20px" }}>
+        {/* Category Groups */}
+        <div style={{ marginBottom:24 }}>
+          <LibraryGroup
+            label="Professional Education"
+            icon="📋"
+            subtitle="From physical handouts"
+            color="#10b981"
+            quizzes={QUIZ_REGISTRY.filter(q => !q.category || q.category === "profd")}
+            storage={storage}
+            onStart={q=>setActiveQ(q.id)}
+          />
+          <LibraryGroup
+            label="General Education"
+            icon="🎓"
+            subtitle="Lorimar GEN ED 2023 — 595 questions"
+            color="#a78bfa"
+            quizzes={QUIZ_REGISTRY.filter(q => q.category === "gened")}
+            storage={storage}
+            onStart={q=>setActiveQ(q.id)}
+          />
+        </div>
+
+        {/* Search & Filter */}
+        <div style={{ display:"flex", gap:8, marginBottom:24, flexWrap:"wrap" }}>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search quizzes..."
+            style={{ flex:1, minWidth:160, background:SURF, border:`1px solid ${BORDER}`, borderRadius:9,
+              padding:"9px 14px", fontSize:13, color:TXT, fontFamily:sf, outline:"none" }}/>
+          <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+            {[{id:"all",label:"All"},...SUBJECTS.map(s=>({id:s.id,label:`${s.icon} ${s.name.split(" ")[1]||s.name}`}))].map(f=>(
+              <button key={f.id} onClick={()=>setFilterS(f.id)}
+                style={{ background:filterS===f.id?"#6366f1":SURF, color:filterS===f.id?"#fff":TXT2,
+                  border:`1px solid ${filterS===f.id?"#6366f1":BORDER}`, borderRadius:8,
+                  padding:"7px 12px", fontSize:12, cursor:"pointer", fontFamily:sf, fontWeight:500 }}>
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </div>
 
         {/* Master Banner */}
         <div onClick={()=>{setMaster350(buildMaster350());setActiveQ("master");}}
