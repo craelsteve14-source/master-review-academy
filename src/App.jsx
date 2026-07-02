@@ -3036,7 +3036,7 @@ export default function MasterReviewAcademy() {
           Everything you need<br/>to pass the LET.
         </h1>
         <p style={{ fontSize:15, color:TXT2, lineHeight:1.75, maxWidth:480, margin:"0 0 28px" }}>
-          600 questions across Professional Ethics, Curriculum Studies, and Methods & Strategies. Organized, trackable, examination-ready.
+          1,600+ questions across Professional Education and General Education subjects. Organized, trackable, examination-ready.
         </p>
         <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
           <SolidBtn onClick={()=>setView("library")}>Start Reviewing</SolidBtn>
@@ -3051,7 +3051,7 @@ export default function MasterReviewAcademy() {
       <div style={{ background:SURF, borderTop:`1px solid ${BORDER}`, borderBottom:`1px solid ${BORDER}`, padding:"20px" }}>
         <div style={{ maxWidth:860, margin:"0 auto", display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:16 }}>
           {[
-            {l:"Total Questions",v:600,          c:"#6366f1"},
+            {l:"Total Questions",v:QUIZ_REGISTRY.reduce((a,q)=>a+q.questions.length,0),c:"#6366f1"},
             {l:"Subject Areas",  v:SUBJECTS.length,c:"#10b981"},
             {l:"Available Quizzes",v:QUIZ_REGISTRY.length,c:"#f59e0b"},
             {l:"Your Mastery",   v:totalMastery()+"%",c:"#a855f7"},
@@ -3191,7 +3191,7 @@ export default function MasterReviewAcademy() {
                       <div style={{ padding:18 }}>
                         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:8 }}>
                           <span style={{ fontSize:11, fontWeight:700, color:quiz.color, letterSpacing:"-0.1px" }}>
-                            {quiz.title.includes("200Q") ? "200Q" : "100Q"} · {quiz.easy+quiz.moderate+quiz.difficult} Questions
+                            {quiz.questions.length}Q · {quiz.easy+quiz.moderate+quiz.difficult} Questions
                           </span>
                           {data && <span style={{ fontSize:13, fontWeight:800, color:quiz.color }}>{data.score}%</span>}
                         </div>
