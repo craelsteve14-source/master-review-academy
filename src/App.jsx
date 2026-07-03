@@ -1,16 +1,16 @@
 import { useState, useRef, useEffect } from "react";
-import { SCIENCE_50 } from './data/science_50q';
-import { SOCSCI_50 } from './data/socsci_50q';
-import { CONTEMP_50 } from './data/contemp_50q';
-import { ARTAPP_50 } from './data/artapp_50q';
-import { ENGLISH_100 } from './data/english_100q';
-import { FILIPINO_100 } from './data/filipino_100q';
-import { MATH_100 } from './data/math_100q';
-import { RIZAL_15 } from './data/rizal_15q';
-import { ETHICS_80 } from './data/ethics_80q';
-import { CHILDADO_50 } from './data/childado_50q';
-import { ASSESS_50 } from './data/assess_50q';
-import { INCLUSIVE_50 } from './data/inclusive_50q';
+import { SCIENCE_50 } from './data/GEN ED/science_50q';
+import { SOCSCI_50 } from './data/GEN ED/socsci_50q';
+import { CONTEMP_50 } from './data/GEN ED/contemp_50q';
+import { ARTAPP_50 } from './data/GEN ED/artapp_50q';
+import { ENGLISH_100 } from './data/GEN ED/english_100q';
+import { FILIPINO_100 } from './data/GEN ED/filipino_100q';
+import { MATH_100 } from './data/GEN ED/math_100q';
+import { RIZAL_15 } from './data/GEN ED/rizal_15q';
+import { ETHICS_80 } from './data/GEN ED/ethics_80q';
+import { CHILDADO_50 } from './data/Physical Handouts/childado_50q';
+import { ASSESS_50 } from './data/Physical Handouts/assess_50q';
+import { INCLUSIVE_50 } from './data/Physical Handouts/inclusive_50q';
 
 // ═══════════════════════════════════════════════════════════════════
 // SUPABASE CONFIG
