@@ -3,6 +3,11 @@ import { SCIENCE_50 } from './data/science_50q';
 import { SOCSCI_50 } from './data/socsci_50q';
 import { CONTEMP_50 } from './data/contemp_50q';
 import { ARTAPP_50 } from './data/artapp_50q';
+import { ENGLISH_100 } from './data/english_100q';
+import { FILIPINO_100 } from './data/filipino_100q';
+import { MATH_100 } from './data/math_100q';
+import { RIZAL_15 } from './data/rizal_15q';
+import { ETHICS_80 } from './data/ethics_80q';
 import { CHILDADO_50 } from './data/childado_50q';
 import { ASSESS_50 } from './data/assess_50q';
 import { INCLUSIVE_50 } from './data/inclusive_50q';
@@ -83,6 +88,11 @@ const QUIZ_REGISTRY = [
   {id:"socsci50",subjId:"socsci",category:"gened",title:"Social Science — 50Q",desc:"Philippine history, education history & government",questions:SOCSCI_50,easy:8,moderate:42,difficult:0,color:"#ef4444",icon:"🏛"},
   {id:"contemp50",subjId:"contemp",category:"gened",title:"The Contemporary World — 50Q",desc:"Globalization, sustainable development & global issues",questions:CONTEMP_50,easy:10,moderate:40,difficult:0,color:"#8b5cf6",icon:"🌏"},
   {id:"artapp50",subjId:"artapp",category:"gened",title:"Art Appreciation — 50Q",desc:"Art forms, movements, elements, Philippine arts & culture",questions:ARTAPP_50,easy:6,moderate:44,difficult:0,color:"#f97316",icon:"🎨"},
+  {id:"english100",subjId:"english",category:"gened",title:"Purposive Communication in English — 100Q",desc:"Grammar, vocabulary, idioms, sentence correction & communication",questions:ENGLISH_100,easy:26,moderate:67,difficult:7,color:"#3b82f6",icon:"📘"},
+  {id:"filipino-100",subjId:"filipino",category:"gened",title:"Malayuning Komunikasyon sa Filipino — 100Q",desc:"Ponolohiya, morpolohiya, pangungusap, tayutay at higit pa",questions:FILIPINO_100,easy:19,moderate:77,difficult:4,color:"#f59e0b",icon:"🇵🇭"},
+  {id:"math100",subjId:"math",category:"gened",title:"Mathematics — 100Q",desc:"Number theory, fractions, decimals, geometry, statistics & more",questions:MATH_100,easy:14,moderate:68,difficult:18,color:"#6366f1",icon:"📐"},
+  {id:"rizal15",subjId:"rizal",category:"gened",title:"Life and Works of Rizal — 15Q",desc:"Rizal's works, philosophies and contributions to the nation",questions:RIZAL_15,easy:1,moderate:14,difficult:0,color:"#ec4899",icon:"📖"},
+  {id:"ethics2-80",subjId:"ethics2",category:"gened",title:"Ethics (GEN ED) — 80Q",desc:"Ethical theories, moral decision-making, values & the Good",questions:ETHICS_80,easy:8,moderate:68,difficult:4,color:"#14b8a6",icon:"⚖️"},
 ];
 
 const SUBJECTS = [
@@ -93,6 +103,11 @@ const SUBJECTS = [
   {id:"socsci",name:"Social Science",color:"#ef4444",icon:"🏛",desc:"Philippine history, society & governance"},
   {id:"contemp",name:"The Contemporary World",color:"#8b5cf6",icon:"🌏",desc:"Globalization, sustainability & global issues"},
   {id:"artapp",name:"Art Appreciation",color:"#f97316",icon:"🎨",desc:"Art forms, movements & Philippine culture"},
+  {id:"english",name:"Purposive Communication in English",color:"#3b82f6",icon:"📘",desc:"Grammar, vocabulary, idioms & effective communication"},
+  {id:"filipino",name:"Malayuning Komunikasyon sa Filipino",color:"#f59e0b",icon:"🇵🇭",desc:"Ponolohiya, morpolohiya, at komunikasyon sa Filipino"},
+  {id:"math",name:"Mathematics",color:"#6366f1",icon:"📐",desc:"Number theory, algebra, geometry & statistics"},
+  {id:"rizal",name:"Life and Works of Rizal",color:"#ec4899",icon:"📖",desc:"Rizal's works, philosophies & national contributions"},
+  {id:"ethics2",name:"Ethics (GEN ED)",color:"#14b8a6",icon:"⚖️",desc:"Ethical theories, values & moral decision-making"},
 ];
 
 // ── MASTER 350Q — all 7 subject banks combined ───────────────────
@@ -943,7 +958,7 @@ export default function MasterReviewAcademy() {
           Everything you need<br/>to pass the LET.
         </h1>
         <p style={{ fontSize:15, color:TXT2, lineHeight:1.75, maxWidth:480, margin:"0 0 28px" }}>
-          350 questions across seven Professional Education and General Education subjects. Organized, trackable, examination-ready.
+          745 questions across Professional Education and General Education subjects. Organized, trackable, examination-ready.
         </p>
         <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
           <SolidBtn onClick={()=>setView("library")}>Start Reviewing</SolidBtn>
@@ -1031,7 +1046,7 @@ export default function MasterReviewAcademy() {
           <LibraryGroup
             label="General Education"
             icon="🎓"
-            subtitle="Lorimar GEN ED 2023 — 200 questions"
+            subtitle="Lorimar GEN ED 2023 — 595 questions"
             color="#a78bfa"
             quizzes={QUIZ_REGISTRY.filter(q => q.category === "gened")}
             storage={storage}
