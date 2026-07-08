@@ -353,6 +353,15 @@ function MascotBubble({ children, tailSide = "left" }) {
   );
 }
 
+function MascotStrip({ pose = "idle", size = 66, message }) {
+  return (
+    <div style={{ margin: "12px 20px 0", display: "flex", alignItems: "center", gap: 10 }}>
+      <Mascot pose={pose} size={size}/>
+      <MascotBubble tailSide="left">{message}</MascotBubble>
+    </div>
+  );
+}
+
 function BottomNav({ active, onNav }) {
   return (
     <div style={{ marginTop:"auto", background:L.navyNav, height:72, display:"flex", alignItems:"center",
@@ -940,6 +949,10 @@ function QuizEngine({ rawQuestions, title, quizId, accentColor, onExit, username
         <div style={{ fontSize:11, color:accentColor, letterSpacing:"2px", textTransform:"uppercase", fontWeight:700, marginBottom:16 }}>
           Progress Report · Q{ckpt.ni} of {total}
         </div>
+        <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:20 }}>
+          <Mascot pose={ckpt.acc >= 70 ? "happy" : "idle"} size={90}/>
+          <MascotBubble>{ckpt.acc >= 70 ? "You're doing great — keep it up!" : "Stay focused, you've got this!"}</MascotBubble>
+        </div>
         <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:24 }}>
           {[{l:"Correct",v:ckpt.correct,c:L.green},{l:"Wrong",v:ckpt.wrong,c:"#E5484D"},{l:"Accuracy",v:ckpt.acc+"%",c:accentColor},{l:"Left",v:total-ckpt.ni,c:L.muted}].map(s=>(
             <div key={s.l} style={{ background:L.card, borderRadius:12, padding:"14px 10px", textAlign:"center", border:`1px solid ${L.line}` }}>
@@ -964,11 +977,15 @@ function QuizEngine({ rawQuestions, title, quizId, accentColor, onExit, username
       <div style={{ background:L.bg, minHeight:"100vh", fontFamily:pf, color:L.ink }}>
         <LQuizBar title="Results" right={<span onClick={onExit} style={{ color:L.blue, fontSize:12, fontWeight:600, cursor:"pointer" }}>← Library</span>} />
         <div style={{ maxWidth:740, margin:"0 auto", padding:"28px 20px" }}>
-          <div style={{ background:gr.bg, borderRadius:20, padding:"28px", textAlign:"center", border:`1px solid ${gr.bdr}`, marginBottom:20 }}>
-            <div style={{ fontSize:11, color:gr.c, letterSpacing:"2px", textTransform:"uppercase", fontWeight:700, marginBottom:8 }}>Final Score</div>
-            <div style={{ fontSize:60, fontWeight:900, color:gr.c, letterSpacing:"-3px", lineHeight:1 }}>{finalScore}%</div>
-            <div style={{ fontSize:18, fontWeight:700, color:gr.c, marginTop:6 }}>{gr.l}</div>
-            <div style={{ fontSize:12, color:L.muted, marginTop:6 }}>{correct} correct · {wrong} incorrect · {total} total questions</div>
+          <div style={{ background:gr.bg, borderRadius:20, padding:"22px 20px", border:`1px solid ${gr.bdr}`, marginBottom:20,
+            display:"flex", alignItems:"center", gap:8 }}>
+            <div style={{ flex:1, textAlign:"center" }}>
+              <div style={{ fontSize:11, color:gr.c, letterSpacing:"2px", textTransform:"uppercase", fontWeight:700, marginBottom:8 }}>Final Score</div>
+              <div style={{ fontSize:48, fontWeight:900, color:gr.c, letterSpacing:"-3px", lineHeight:1 }}>{finalScore}%</div>
+              <div style={{ fontSize:16, fontWeight:700, color:gr.c, marginTop:6 }}>{gr.l}</div>
+              <div style={{ fontSize:11, color:L.muted, marginTop:6 }}>{correct} correct · {wrong} incorrect · {total} total questions</div>
+            </div>
+            <Mascot pose={finalScore >= 80 ? "happy" : finalScore >= 50 ? "idle" : "oops"} size={110}/>
           </div>
 
           {/* Diff breakdown */}
@@ -1345,6 +1362,8 @@ export default function MasterReviewAcademy() {
         <p style={{ fontSize:11, color:L.muted, marginTop:3 }}>Browse every subject and jump back into studying</p>
       </div>
 
+      <MascotStrip message="Found something new to learn today?"/>
+
       <div style={{ margin:"15px 20px 0" }}>
         <div style={{ display:"flex", alignItems:"center", gap:8, background:"#fff", border:`1px solid ${L.line}`,
           borderRadius:999, padding:"11px 16px" }}>
@@ -1414,6 +1433,8 @@ export default function MasterReviewAcademy() {
         <h1 style={{ fontSize:20, fontWeight:700, color:L.ink }}>Dashboard</h1>
         <p style={{ fontSize:11, color:L.muted, marginTop:3 }}>Your performance at a glance</p>
       </div>
+
+      <MascotStrip message="Let's see how far you've come!"/>
 
       <div style={{ margin:"15px 20px 0", display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
         {[
@@ -1511,6 +1532,8 @@ export default function MasterReviewAcademy() {
         <p style={{ fontSize:11, color:L.muted, marginTop:3 }}>Simulate the real board exam experience</p>
       </div>
 
+      <MascotStrip message="Ready when you are — you've got this!"/>
+
       <div style={{ margin:"15px 20px 0" }}>
         <div style={{ background:L.navy, borderRadius:22, padding:20, color:"#fff" }}>
           <div style={{ fontSize:14.5, fontWeight:600, marginBottom:16 }}>Exam Readiness</div>
@@ -1579,6 +1602,8 @@ export default function MasterReviewAcademy() {
         <h2 style={{ fontSize:16, fontWeight:700, color:L.ink, marginTop:10 }}>{user}</h2>
         <p style={{ fontSize:10.5, color:L.muted, marginTop:2 }}>{isAdmin ? "Administrator" : "Future Teacher"}</p>
       </div>
+
+      <MascotStrip message="Great to see you here again!"/>
 
       <div style={{ display:"flex", margin:"14px 20px 0", background:"#fff", border:`1px solid ${L.line}`, borderRadius:16, overflow:"hidden" }}>
         {[
