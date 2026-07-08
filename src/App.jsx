@@ -145,6 +145,35 @@ function useStorage(username) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
+// STREAK + DAILY GOAL — real, derived from actual usage
+// ═══════════════════════════════════════════════════════════════════
+const DAILY_GOAL = 30;
+function todayKey() { return new Date().toISOString().slice(0, 10); }
+
+// Call once per session on login/mount — bumps the consecutive-day streak.
+function bumpStreak(storage) {
+  const today = todayKey();
+  const s = storage.get("streak") || { count: 0, last: null };
+  if (s.last === today) return s.count;
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  const count = s.last === yesterday ? s.count + 1 : 1;
+  storage.set("streak", { count, last: today });
+  return count;
+}
+// Call on every answered question — bumps today's answered-question tally.
+function bumpDailyAnswered(storage) {
+  const today = todayKey();
+  const d = storage.get("daily") || { date: today, count: 0 };
+  const count = d.date === today ? d.count + 1 : 1;
+  storage.set("daily", { date: today, count });
+  return count;
+}
+function getDailyAnswered(storage) {
+  const d = storage.get("daily") || { date: null, count: 0 };
+  return d.date === todayKey() ? d.count : 0;
+}
+
+// ═══════════════════════════════════════════════════════════════════
 // UTILITIES
 // ═══════════════════════════════════════════════════════════════════
 function shuffle(arr) {
@@ -203,6 +232,99 @@ const DIFF   = {
   moderate: { bg:"#1c1400", ring:"#eab308", text:"#facc15", label:"Moderate"  },
   difficult:{ bg:"#2d0a1f", ring:"#a855f7", text:"#c084fc", label:"Difficult" },
 };
+
+// ═══════════════════════════════════════════════════════════════════
+// LIGHT DESIGN SYSTEM — Home / Library / Master Exam / Dashboard / Profile
+// (matches the approved MRA mockup; quiz-taking, auth & admin stay on the
+// dark tokens above)
+// ═══════════════════════════════════════════════════════════════════
+const pf = "'Poppins',sans-serif";
+const L = {
+  navy:"#0E2348", navyNav:"#071A37", gold:"#F0BA48", cream:"#FBF3E3",
+  green:"#1EA457", greenTint:"#EAF7EE", orange:"#F5A623", orangeTint:"#FEF3E2",
+  blue:"#3580CC", blueTint:"#EAF2FB", purple:"#B45BF6", purpleTint:"#F6ECFC",
+  bg:"#F6F6F8", card:"#FFFFFF", line:"#E7E9EE", ink:"#14213D", muted:"#7A8299",
+};
+const LNAV_ITEMS = [
+  { id:"home",     label:"Home",        icon:"home" },
+  { id:"library",  label:"Library",     icon:"library" },
+  { id:"master",   label:"Master Exam", icon:"exam" },
+  { id:"dashboard",label:"Dashboard",   icon:"dashboard" },
+  { id:"profile",  label:"Profile",     icon:"profile" },
+];
+
+function NavIcon({ type, active }) {
+  const c = active ? L.gold : "#8a93a8";
+  if (type === "home") return <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 11l9-8 9 8" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M5 10v10h14V10" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+  if (type === "library") return <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 4h7v16H4z M13 4h7v16h-7z" stroke={c} strokeWidth="1.6"/></svg>;
+  if (type === "exam") return <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="18" rx="2" stroke={c} strokeWidth="1.6"/><path d="M8 8h8M8 12h8M8 16h5" stroke={c} strokeWidth="1.6" strokeLinecap="round"/></svg>;
+  if (type === "dashboard") return <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 20V13M11 20V7M18 20V10" stroke={c} strokeWidth="2" strokeLinecap="round"/></svg>;
+  return <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke={c} strokeWidth="1.6"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6" stroke={c} strokeWidth="1.6" strokeLinecap="round"/></svg>;
+}
+
+function BottomNav({ active, onNav }) {
+  return (
+    <div style={{ marginTop:"auto", background:L.navyNav, height:72, display:"flex", alignItems:"center",
+      justifyContent:"space-around", padding:"0 6px", position:"sticky", bottom:0, zIndex:100 }}>
+      {LNAV_ITEMS.map(n => (
+        <button key={n.id} onClick={()=>onNav(n.id)} style={{ background:"none", border:"none", cursor:"pointer",
+          display:"flex", flexDirection:"column", alignItems:"center", gap:4, padding:4,
+          color: active===n.id ? L.gold : "#8a93a8", fontFamily:pf }}>
+          <NavIcon type={n.icon} active={active===n.id}/>
+          <span style={{ fontSize:9, fontWeight:500 }}>{n.label}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function LHeader({ user, onMenu, onBell }) {
+  return (
+    <div style={{ height:56, padding:"0 20px", display:"flex", alignItems:"center", justifyContent:"space-between",
+      flex:"none", fontFamily:pf, background:L.bg }}>
+      <button onClick={onMenu} style={{ background:"none", border:"none", cursor:"pointer", padding:0, marginRight:12 }}>
+        <svg width="19" height="14" viewBox="0 0 20 14"><rect y="0" width="20" height="2" rx="1" fill={L.ink}/><rect y="6" width="20" height="2" rx="1" fill={L.ink}/><rect y="12" width="20" height="2" rx="1" fill={L.ink}/></svg>
+      </button>
+      <div style={{ display:"flex", alignItems:"center", gap:8, flex:1, minWidth:0 }}>
+        <svg width="24" height="22" viewBox="0 0 26 22" style={{ flex:"none" }}><path d="M13 0L26 5.5L13 11L0 5.5L13 0Z" fill={L.navy}/><path d="M6 8V14C6 14 9 17 13 17C17 17 20 14 20 14V8L13 11L6 8Z" fill={L.navy}/><path d="M23 6.5V13" stroke={L.gold} strokeWidth="1.4"/><circle cx="23" cy="14" r="1.6" fill={L.gold}/></svg>
+        <div style={{ lineHeight:1.15, minWidth:0 }}>
+          <div style={{ fontSize:12, fontWeight:700, letterSpacing:.2, color:L.ink, whiteSpace:"nowrap" }}>MASTER REVIEW ACADEMY</div>
+          <div style={{ fontSize:8, color:L.muted, whiteSpace:"nowrap" }}>Your Journey. Our Guidance. Your Success.</div>
+        </div>
+      </div>
+      <button onClick={onBell} style={{ background:"none", border:"none", cursor:"pointer", padding:0, flex:"none" }}>
+        <svg width="20" height="22" viewBox="0 0 20 22"><path d="M10 0C7.79 0 6 1.79 6 4V4.6C3.6 5.7 2 8.1 2 11V15L0 18H20L18 15V11C18 8.1 16.4 5.7 14 4.6V4C14 1.79 12.21 0 10 0Z" fill={L.ink}/><path d="M7 19C7 20.66 8.34 22 10 22C11.66 22 13 20.66 13 19H7Z" fill={L.ink}/></svg>
+      </button>
+    </div>
+  );
+}
+
+function LMenu({ user, isAdmin, onClose, onNav, onAdmin, onLogout }) {
+  return (
+    <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(14,35,72,.35)", zIndex:300,
+      display:"flex", alignItems:"flex-start" }}>
+      <div onClick={e=>e.stopPropagation()} style={{ background:L.card, width:240, maxWidth:"78vw", height:"100%",
+        boxShadow:"6px 0 24px -8px rgba(14,35,72,.3)", fontFamily:pf, display:"flex", flexDirection:"column" }}>
+        <div style={{ padding:"22px 18px", background:L.navy, color:"#fff" }}>
+          <div style={{ width:44, height:44, borderRadius:"50%", background:L.gold, color:L.navy, fontWeight:700,
+            fontSize:16, display:"flex", alignItems:"center", justifyContent:"center", marginBottom:10 }}>
+            {(user||"?").slice(0,2).toUpperCase()}
+          </div>
+          <div style={{ fontSize:13, fontWeight:700 }}>{user}</div>
+        </div>
+        <div style={{ padding:"10px 0", flex:1 }}>
+          {LNAV_ITEMS.map(n => (
+            <div key={n.id} onClick={()=>onNav(n.id)} style={{ padding:"12px 18px", fontSize:12.5, fontWeight:600,
+              color:L.ink, cursor:"pointer" }}>{n.label}</div>
+          ))}
+          {isAdmin && <div onClick={onAdmin} style={{ padding:"12px 18px", fontSize:12.5, fontWeight:600, color:L.blue, cursor:"pointer" }}>Admin Panel</div>}
+        </div>
+        <div onClick={onLogout} style={{ padding:"16px 18px", fontSize:12.5, fontWeight:600, color:"#E5484D",
+          cursor:"pointer", borderTop:`1px solid ${L.line}` }}>Log Out</div>
+      </div>
+    </div>
+  );
+}
 
 // ═══════════════════════════════════════════════════════════════════
 // REUSABLE COMPONENTS
@@ -666,6 +788,7 @@ function QuizEngine({ rawQuestions, title, quizId, accentColor, onExit, username
     if (ok) setCorrect(c => c + 1);
     else { setWrong(c => c + 1); setMissed(m => [...m, { ...q, ya: sel }]); }
     setShown(true);
+    bumpDailyAnswered(storage);
   }
 
   function next() {
@@ -882,6 +1005,7 @@ export default function MasterReviewAcademy() {
   const [filterS,  setFilterS]  = useState("all");
   const [search,   setSearch]   = useState("");
   const [master350,setMaster350]= useState(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   // Save session to localStorage whenever it changes
   useEffect(() => {
@@ -893,6 +1017,9 @@ export default function MasterReviewAcademy() {
   }, [user, isAdmin, view]);
 
   const storage = useStorage(user);
+  const [streak, setStreak] = useState(0);
+
+  useEffect(() => { if (user) setStreak(bumpStreak(storage)); }, [user]);
 
   function handleLogin(username, admin) {
     setUser(username); setIsAdmin(admin); setView(admin ? "dashboard" : "home");
@@ -927,357 +1054,433 @@ export default function MasterReviewAcademy() {
 
   const filtered = QUIZ_REGISTRY.filter(q => {
     const ms = search.toLowerCase();
-    return (filterS==="all"||q.subjId===filterS) && (!ms||q.title.toLowerCase().includes(ms));
+    const isProf = !q.category || q.category === "profd";
+    const catMatch = filterS==="all" ? true
+      : filterS==="all-prof" ? isProf
+      : filterS==="all-gened" ? q.category==="gened"
+      : q.subjId===filterS;
+    return catMatch && (!ms||q.title.toLowerCase().includes(ms));
   });
 
   const completedCount = QUIZ_REGISTRY.filter(q=>getData(q.id)).length;
 
+  // ── shared real-data helpers for the light screens ─────────────
+  const profSubset = QUIZ_REGISTRY.filter(q => !q.category || q.category === "profd");
+  const genSubset  = QUIZ_REGISTRY.filter(q => q.category === "gened");
+  const avgOf = (subset) => {
+    const scores = subset.map(q => getData(q.id)?.score || 0);
+    return Math.round(scores.reduce((a,b)=>a+b,0) / subset.length);
+  };
+  const grandTotalQuestions = QUIZ_REGISTRY.reduce((a,q)=>a+q.questions.length,0);
+  const questionsAnswered   = QUIZ_REGISTRY.reduce((a,q)=>a+(getData(q.id)?.total||0),0);
+  const correctAnswers      = QUIZ_REGISTRY.reduce((a,q)=>a+(getData(q.id)?.correct||0),0);
+  const remainingQuestions  = grandTotalQuestions - questionsAnswered;
+  const mostRecent = QUIZ_REGISTRY
+    .map(q => ({ q, data:getData(q.id) }))
+    .filter(x => x.data)
+    .sort((a,b) => new Date(b.data.date) - new Date(a.data.date))[0];
+  const dailyAnswered = getDailyAnswered(storage);
+
+  const shell = (active, content) => (
+    <div style={{ background:L.bg, minHeight:"100vh", display:"flex", justifyContent:"center", fontFamily:pf }}>
+      <div style={{ width:"100%", maxWidth:480, minHeight:"100vh", display:"flex", flexDirection:"column", background:L.bg }}>
+        <LHeader user={user} onMenu={()=>setMenuOpen(true)} onBell={()=>{}}/>
+        {content}
+        <BottomNav active={active} onNav={v => {
+          if (v === "master") { setView("master"); return; }
+          setView(v);
+        }}/>
+      </div>
+      {menuOpen && <LMenu user={user} isAdmin={isAdmin} onClose={()=>setMenuOpen(false)}
+        onNav={v=>{setMenuOpen(false); setView(v==="master"?"master":v);}}
+        onAdmin={()=>{setMenuOpen(false); setView("admin");}}
+        onLogout={()=>{setMenuOpen(false); handleLogout();}}/>}
+    </div>
+  );
+
+  const SubjRing = ({ pct, color, tint }) => (
+    <div style={{ width:52, height:52, borderRadius:"50%", margin:"8px auto 6px", display:"flex", alignItems:"center",
+      justifyContent:"center", position:"relative",
+      background:`conic-gradient(${color} 0deg ${Math.min(pct,100)*3.6}deg, ${tint} ${Math.min(pct,100)*3.6}deg 360deg)` }}>
+      <div style={{ position:"absolute", inset:5, borderRadius:"50%", background:L.bg }}/>
+      <div style={{ position:"relative", fontSize:12.5, fontWeight:700, color:L.ink }}>{pct}%</div>
+    </div>
+  );
+
   // ── HOME ──────────────────────────────────────────────────────
-  if (view === "home") return (
-    <div style={{ background:BG, minHeight:"100vh", fontFamily:sf, color:TXT }}>
-      <NavBar title="Master Review Academy"
-        left={<span style={{ fontSize:13, color:"#6366f1", fontWeight:700 }}>👤 {user}</span>}
-        right={
-          <div style={{ display:"flex", gap:4 }}>
-            {["Library","Dashboard"].map(v=>(
-              <GhostBtn key={v} onClick={()=>setView(v.toLowerCase())}>{v}</GhostBtn>
-            ))}
-            <GhostBtn onClick={handleLogout} style={{ color:"#ef4444" }}>Sign Out</GhostBtn>
-          </div>
-        }
-      />
-
-      {/* Hero */}
-      <div style={{ padding:"56px 20px 40px", maxWidth:860, margin:"0 auto" }}>
-        <div style={{ fontSize:11, color:"#6366f1", letterSpacing:"3px", textTransform:"uppercase", fontWeight:700, marginBottom:12 }}>
-          LET Board Examination Review
-        </div>
-        <h1 style={{ fontSize:"clamp(28px,5vw,52px)", fontWeight:900, letterSpacing:"-2px", lineHeight:1.08,
-          margin:"0 0 14px", background:"linear-gradient(135deg,#fafafa 40%,#52525b)",
-          WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>
-          Everything you need<br/>to pass the LET.
-        </h1>
-        <p style={{ fontSize:15, color:TXT2, lineHeight:1.75, maxWidth:480, margin:"0 0 28px" }}>
-          745 questions across Professional Education and General Education subjects. Organized, trackable, examination-ready.
-        </p>
-        <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
-          <SolidBtn onClick={()=>setView("library")}>Start Reviewing</SolidBtn>
-          <SolidBtn onClick={()=>{setMaster350(buildMaster350());setActiveQ("master");}}
-            color={SURF2} style={{ border:`1px solid ${BORDER}`, color:TXT }}>
-            Master Exam — 350Q
-          </SolidBtn>
-        </div>
+  if (view === "home") return shell("home", (
+    <>
+      <div style={{ margin:"0 20px", padding:20, background:L.cream, borderRadius:22, minHeight:120 }}>
+        <h1 style={{ fontSize:19, fontWeight:600, color:L.ink, lineHeight:1.28, maxWidth:"70%" }}>Good {new Date().getHours()<12?"morning":new Date().getHours()<18?"afternoon":"evening"},<br/>{user}!</h1>
+        <p style={{ fontSize:11, color:"#8a7f6f", marginTop:10, maxWidth:"80%", lineHeight:1.5 }}>Every question you answer brings you closer to your goal.</p>
       </div>
 
-      {/* Stats bar */}
-      <div style={{ background:SURF, borderTop:`1px solid ${BORDER}`, borderBottom:`1px solid ${BORDER}`, padding:"20px" }}>
-        <div style={{ maxWidth:860, margin:"0 auto", display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:16 }}>
-          {[
-            {l:"Total Questions",v:QUIZ_REGISTRY.reduce((a,q)=>a+q.questions.length,0),c:"#6366f1"},
-            {l:"Subject Areas",  v:SUBJECTS.length,c:"#10b981"},
-            {l:"Available Quizzes",v:QUIZ_REGISTRY.length,c:"#f59e0b"},
-            {l:"Your Mastery",   v:totalMastery()+"%",c:"#a855f7"},
-          ].map(s=>(
-            <div key={s.l} style={{ textAlign:"center" }}>
-              <div style={{ fontSize:26, fontWeight:900, color:s.c, letterSpacing:"-1px" }}>{s.v}</div>
-              <div style={{ fontSize:10, color:TXT2, marginTop:3, textTransform:"uppercase", letterSpacing:"0.5px" }}>{s.l}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Subject Cards */}
-      <div style={{ padding:"40px 20px", maxWidth:860, margin:"0 auto" }}>
-        <div style={{ fontSize:10, color:TXT2, letterSpacing:"2px", textTransform:"uppercase", fontWeight:600, marginBottom:16 }}>Subject Areas</div>
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))", gap:12 }}>
-          {SUBJECTS.map(s => {
-            const sq = QUIZ_REGISTRY.filter(q=>q.subjId===s.id);
-            const avg = Math.round(sq.reduce((a,q)=>a+(getData(q.id)?.score||0),0)/sq.length);
-            return (
-              <div key={s.id} onClick={()=>{setFilterS(s.id);setView("library");}}
-                style={{ background:SURF, borderRadius:14, padding:20, border:`1px solid ${BORDER}`, cursor:"pointer", transition:"border-color .2s" }}
-                onMouseEnter={e=>e.currentTarget.style.borderColor=s.color}
-                onMouseLeave={e=>e.currentTarget.style.borderColor=BORDER}>
-                <div style={{ fontSize:24, marginBottom:10 }}>{s.icon}</div>
-                <div style={{ fontSize:13, fontWeight:700, color:TXT, marginBottom:5, letterSpacing:"-0.2px" }}>{s.name}</div>
-                <div style={{ fontSize:11, color:TXT2, lineHeight:1.6, marginBottom:12 }}>{s.desc}</div>
-                <Bar pct={avg} color={s.color}/>
-                <div style={{ display:"flex", justifyContent:"space-between", marginTop:7 }}>
-                  <span style={{ fontSize:10, color:TXT2 }}>{sq.length} quizzes · {sq.reduce((a,q)=>a+q.questions.length,0)}Q</span>
-                  <span style={{ fontSize:10, color:s.color, fontWeight:600 }}>{avg}% mastery</span>
-                </div>
+      <div style={{ margin:"15px 20px 0" }}>
+        <div style={{ background:L.navy, borderRadius:22, padding:20, color:"#fff" }}>
+          <div style={{ fontSize:14.5, fontWeight:600, marginBottom:16 }}>Overall Progress</div>
+          <div style={{ display:"flex", alignItems:"center", gap:18 }}>
+            <div style={{ width:112, height:112, borderRadius:"50%", flex:"none",
+              background:`conic-gradient(${L.gold} 0deg ${totalMastery()*3.6}deg, rgba(255,255,255,.14) ${totalMastery()*3.6}deg 360deg)`,
+              display:"flex", alignItems:"center", justifyContent:"center", position:"relative" }}>
+              <div style={{ position:"absolute", inset:12, borderRadius:"50%", background:L.navy }}/>
+              <div style={{ position:"relative", textAlign:"center" }}>
+                <div style={{ fontSize:22, fontWeight:700 }}>{totalMastery()}%</div>
+                <div style={{ fontSize:9, color:"#c9d2e2", marginTop:1 }}>Mastery</div>
               </div>
-            );
-          })}
-          <div onClick={()=>{setMaster350(buildMaster350());setActiveQ("master");}}
-            style={{ background:"linear-gradient(135deg,#1e1b4b,#111116)", borderRadius:14, padding:20, border:"1px solid #6366f1", cursor:"pointer" }}>
-            <div style={{ fontSize:24, marginBottom:10 }}>🏆</div>
-            <div style={{ fontSize:13, fontWeight:700, color:TXT, marginBottom:5 }}>Master Board Exam</div>
-            <div style={{ fontSize:11, color:TXT2, lineHeight:1.6, marginBottom:12 }}>All 350 questions from the seven subject banks in one exam.</div>
-            <div style={{ display:"flex", justifyContent:"space-between" }}>
-              <span style={{ fontSize:10, color:TXT2 }}>350Q · All subjects</span>
-              <span style={{ fontSize:10, color:"#818cf8", fontWeight:600 }}>Start →</span>
+            </div>
+            <div style={{ flex:1, display:"flex", flexDirection:"column", gap:9, minWidth:0 }}>
+              <div><div style={{ fontSize:10, color:"#a9b4c9" }}>Correct Answer</div><div style={{ fontSize:15, fontWeight:600, marginTop:1 }}>{correctAnswers.toLocaleString()}</div></div>
+              <div><div style={{ fontSize:10, color:"#a9b4c9" }}>Questions Answered</div><div style={{ fontSize:15, fontWeight:600, marginTop:1 }}>{questionsAnswered.toLocaleString()}</div></div>
+              <div><div style={{ fontSize:10, color:"#a9b4c9" }}>Remaining</div><div style={{ fontSize:15, fontWeight:600, marginTop:1 }}>{remainingQuestions.toLocaleString()}</div></div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  );
 
-  // ── LIBRARY ───────────────────────────────────────────────────
-  if (view === "library") return (
-    <div style={{ background:BG, minHeight:"100vh", fontFamily:sf, color:TXT }}>
-      <NavBar title="Quiz Library"
-        left={<GhostBtn onClick={()=>{setView("home");setFilterS("all");}}>← Home</GhostBtn>}
-        right={<GhostBtn onClick={()=>setView("dashboard")}>Dashboard</GhostBtn>}
-      />
-      <div style={{ maxWidth:860, margin:"0 auto", padding:"28px 20px" }}>
-        {/* Category Groups */}
-        <div style={{ marginBottom:24 }}>
-          <LibraryGroup
-            label="Professional Education"
-            icon="📋"
-            subtitle="From physical handouts"
-            color="#10b981"
-            quizzes={QUIZ_REGISTRY.filter(q => !q.category || q.category === "profd")}
-            storage={storage}
-            onStart={q=>setActiveQ(q.id)}
-          />
-          <LibraryGroup
-            label="General Education"
-            icon="🎓"
-            subtitle="Lorimar GEN ED 2023 — 595 questions"
-            color="#a78bfa"
-            quizzes={QUIZ_REGISTRY.filter(q => q.category === "gened")}
-            storage={storage}
-            onStart={q=>setActiveQ(q.id)}
-          />
+      <div style={{ margin:"15px 20px 0", display:"flex", gap:8 }}>
+        <div onClick={()=>{setFilterS("all-prof");setView("library");}} style={{ flex:1, minWidth:0, borderRadius:16, padding:"12px 6px 10px",
+          textAlign:"center", background:L.greenTint, cursor:"pointer" }}>
+          <div style={{ fontSize:22 }}>📋</div>
+          <div style={{ fontSize:10.5, fontWeight:600, color:L.ink, marginTop:6 }}>Professional Education</div>
+          <SubjRing pct={avgOf(profSubset)} color={L.green} tint="#d7ead9"/>
+          <div style={{ fontSize:8.5, color:L.muted, marginTop:2 }}>{profSubset.length} quizzes</div>
         </div>
-
-        {/* Search & Filter */}
-        <div style={{ display:"flex", gap:8, marginBottom:24, flexWrap:"wrap" }}>
-          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search quizzes..."
-            style={{ flex:1, minWidth:160, background:SURF, border:`1px solid ${BORDER}`, borderRadius:9,
-              padding:"9px 14px", fontSize:13, color:TXT, fontFamily:sf, outline:"none" }}/>
-          <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
-            {[{id:"all",label:"All"},...SUBJECTS.map(s=>({id:s.id,label:`${s.icon} ${s.name.split(" ")[1]||s.name}`}))].map(f=>(
-              <button key={f.id} onClick={()=>setFilterS(f.id)}
-                style={{ background:filterS===f.id?"#6366f1":SURF, color:filterS===f.id?"#fff":TXT2,
-                  border:`1px solid ${filterS===f.id?"#6366f1":BORDER}`, borderRadius:8,
-                  padding:"7px 12px", fontSize:12, cursor:"pointer", fontFamily:sf, fontWeight:500 }}>
-                {f.label}
-              </button>
-            ))}
-          </div>
+        <div onClick={()=>{setFilterS("all-gened");setView("library");}} style={{ flex:1, minWidth:0, borderRadius:16, padding:"12px 6px 10px",
+          textAlign:"center", background:L.purpleTint, cursor:"pointer" }}>
+          <div style={{ fontSize:22 }}>🎓</div>
+          <div style={{ fontSize:10.5, fontWeight:600, color:L.ink, marginTop:6 }}>General Education</div>
+          <SubjRing pct={avgOf(genSubset)} color={L.purple} tint="#e6d3f2"/>
+          <div style={{ fontSize:8.5, color:L.muted, marginTop:2 }}>{genSubset.length} quizzes</div>
         </div>
-
-        {/* Master Banner */}
-        <div onClick={()=>{setMaster350(buildMaster350());setActiveQ("master");}}
-          style={{ background:"linear-gradient(135deg,#1e1b4b,#111116)", borderRadius:14, padding:"16px 20px",
-            border:"1px solid #6366f1", cursor:"pointer", marginBottom:24,
-            display:"flex", alignItems:"center", justifyContent:"space-between", gap:12 }}>
-          <div>
-            <div style={{ fontSize:10, color:"#818cf8", letterSpacing:"2px", textTransform:"uppercase", fontWeight:700, marginBottom:4 }}>Comprehensive Exam</div>
-            <div style={{ fontSize:15, fontWeight:800, color:TXT, letterSpacing:"-0.3px" }}>Master Board Exam Review</div>
-            <div style={{ fontSize:11, color:TXT2, marginTop:3 }}>
-              350 questions · All 7 subjects · Shuffled fresh each attempt
-              {getData("master") && <span style={{ color:"#818cf8", marginLeft:8 }}>Last: {getData("master").score}%</span>}
-            </div>
-          </div>
-          <SolidBtn onClick={e=>{e.stopPropagation();setMaster350(buildMaster350());setActiveQ("master");}}>Start 350Q →</SolidBtn>
-        </div>
-
-        {/* Quiz Grid */}
-        <div style={{ fontSize:10, color:TXT2, letterSpacing:"2px", textTransform:"uppercase", fontWeight:600, marginBottom:14 }}>
-          {filtered.length} Quiz{filtered.length!==1?"zes":""}
-        </div>
-
-        {/* Group by subject */}
-        {SUBJECTS.filter(s=>filterS==="all"||s.id===filterS).map(s => {
-          const sq = filtered.filter(q=>q.subjId===s.id);
-          if (!sq.length) return null;
-          return (
-            <div key={s.id} style={{ marginBottom:28 }}>
-              <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12 }}>
-                <div style={{ width:3, height:16, background:s.color, borderRadius:99 }}/>
-                <span style={{ fontSize:12, fontWeight:700, color:s.color }}>{s.icon} {s.name}</span>
-              </div>
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(270px,1fr))", gap:12 }}>
-                {sq.map(quiz => {
-                  const data = getData(quiz.id);
-                  return (
-                    <div key={quiz.id} style={{ background:SURF, borderRadius:14, border:`1px solid ${BORDER}`, overflow:"hidden", transition:"border-color .2s" }}
-                      onMouseEnter={e=>e.currentTarget.style.borderColor=quiz.color}
-                      onMouseLeave={e=>e.currentTarget.style.borderColor=BORDER}>
-                      <div style={{ height:2, background:quiz.color }}/>
-                      <div style={{ padding:18 }}>
-                        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:8 }}>
-                          <span style={{ fontSize:11, fontWeight:700, color:quiz.color, letterSpacing:"-0.1px" }}>
-                            {quiz.questions.length}Q · {quiz.easy+quiz.moderate+quiz.difficult} Questions
-                          </span>
-                          {data && <span style={{ fontSize:13, fontWeight:800, color:quiz.color }}>{data.score}%</span>}
-                        </div>
-                        <div style={{ fontSize:13, fontWeight:700, color:TXT, marginBottom:5, lineHeight:1.3, letterSpacing:"-0.2px" }}>
-                          {quiz.title.split("—")[1]?.trim()||quiz.title}
-                        </div>
-                        <div style={{ fontSize:11, color:TXT2, lineHeight:1.55, marginBottom:12 }}>{quiz.desc}</div>
-                        <div style={{ display:"flex", gap:4, marginBottom:12 }}>
-                          {[["easy",quiz.easy],["moderate",quiz.moderate],["difficult",quiz.difficult]].map(([d,n])=>(
-                            <span key={d} style={{ fontSize:9, color:DIFF[d].text, background:DIFF[d].bg, padding:"2px 7px", borderRadius:5 }}>{n} {d}</span>
-                          ))}
-                        </div>
-                        {data && <div style={{ marginBottom:10 }}><Bar pct={data.score} color={quiz.color}/></div>}
-                        <button onClick={()=>setActiveQ(quiz.id)}
-                          style={{ width:"100%", background:quiz.color, color:"#fff", border:"none", borderRadius:9,
-                            padding:"10px", fontSize:13, fontWeight:700, cursor:"pointer", fontFamily:sf }}>
-                          {data ? "Retake" : "Start Quiz"}
-                        </button>
-                        {data && <div style={{ fontSize:10, color:TXT2, textAlign:"center", marginTop:6 }}>
-                          {data.correct}/{data.total} · {new Date(data.date).toLocaleDateString()}
-                        </div>}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
       </div>
-    </div>
-  );
 
-  // ── DASHBOARD ─────────────────────────────────────────────────
-  if (view === "dashboard") return (
-    <div style={{ background:BG, minHeight:"100vh", fontFamily:sf, color:TXT }}>
-      <NavBar title="Dashboard"
-        left={<GhostBtn onClick={()=>setView("home")}>← Home</GhostBtn>}
-        right={
-          <div style={{ display:"flex", gap:4 }}>
-            <GhostBtn onClick={()=>setView("library")}>Library</GhostBtn>
-            {isAdmin && <GhostBtn onClick={()=>setView("admin")} style={{ color:"#6366f1", fontWeight:700 }}>Admin Panel</GhostBtn>}
-            <GhostBtn onClick={handleLogout} style={{ color:"#ef4444" }}>Sign Out</GhostBtn>
+      <div style={{ margin:"15px 20px 0" }}>
+        <div style={{ background:L.card, borderRadius:22, boxShadow:"0 3px 10px -4px rgba(14,35,72,.10)", border:`1px solid ${L.line}` }}>
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 18px 0" }}>
+            <div style={{ fontSize:13.5, fontWeight:600, color:L.ink }}>Continue Studying</div>
+            <div onClick={()=>setView("library")} style={{ fontSize:10.5, fontWeight:600, color:L.blue, cursor:"pointer" }}>View All</div>
           </div>
-        }
-      />
-      <div style={{ maxWidth:860, margin:"0 auto", padding:"28px 20px" }}>
-        {/* Welcome */}
-        <div style={{ background:"linear-gradient(135deg,#1e1b4b,#111116)", borderRadius:16, padding:24, border:"1px solid #6366f1", marginBottom:20,
-          display:"flex", alignItems:"center", gap:24, flexWrap:"wrap" }}>
-          <Ring pct={totalMastery()} size={88} color="#6366f1" label="Overall"/>
-          <div style={{ flex:1, minWidth:160 }}>
-            <div style={{ fontSize:11, color:"#818cf8", letterSpacing:"1.5px", textTransform:"uppercase", fontWeight:700, marginBottom:6 }}>
-              Welcome back, {user}
-            </div>
-            <div style={{ fontSize:28, fontWeight:900, color:TXT, letterSpacing:"-1px", lineHeight:1 }}>{totalMastery()}% Mastery</div>
-            <div style={{ fontSize:12, color:TXT2, marginTop:6 }}>
-              {completedCount}/{QUIZ_REGISTRY.length} quizzes completed · 600 total questions
-            </div>
-          </div>
-          <div style={{ display:"flex", gap:24 }}>
-            <div style={{ textAlign:"center" }}>
-              <div style={{ fontSize:24, fontWeight:900, color:"#22c55e" }}>{completedCount}</div>
-              <div style={{ fontSize:9, color:TXT2, marginTop:2, textTransform:"uppercase", letterSpacing:"0.5px" }}>Done</div>
-            </div>
-            <div style={{ textAlign:"center" }}>
-              <div style={{ fontSize:24, fontWeight:900, color:"#f59e0b" }}>{QUIZ_REGISTRY.length-completedCount}</div>
-              <div style={{ fontSize:9, color:TXT2, marginTop:2, textTransform:"uppercase", letterSpacing:"0.5px" }}>Left</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Subject Performance */}
-        <div style={{ fontSize:10, color:TXT2, letterSpacing:"2px", textTransform:"uppercase", fontWeight:600, marginBottom:12 }}>Subject Performance</div>
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))", gap:12, marginBottom:20 }}>
-          {SUBJECTS.map(s => {
-            const sq = QUIZ_REGISTRY.filter(q=>q.subjId===s.id);
-            const scores = sq.map(q=>getData(q.id)?.score).filter(Boolean);
-            const avg = scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : 0;
-            return (
-              <div key={s.id} style={{ background:SURF, borderRadius:14, padding:18, border:`1px solid ${BORDER}` }}>
-                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
-                  <div>
-                    <div style={{ fontSize:20, marginBottom:3 }}>{s.icon}</div>
-                    <div style={{ fontSize:11, fontWeight:700, color:TXT, letterSpacing:"-0.2px" }}>{s.name.split(" ").slice(0,3).join(" ")}</div>
-                  </div>
-                  <Ring pct={avg} size={52} color={s.color}/>
+          {mostRecent ? (
+            <div style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 18px 16px" }}>
+              <div style={{ width:52, height:52, borderRadius:12, background:mostRecent.q.color, flex:"none",
+                display:"flex", alignItems:"center", justifyContent:"center", fontSize:22 }}>{mostRecent.q.icon}</div>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ fontSize:9, color:L.muted }}>{mostRecent.q.category==="gened"?"General Education":"Professional Education"}</div>
+                <div style={{ fontSize:13, fontWeight:700, color:L.ink, margin:"2px 0 6px", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{mostRecent.q.title.split("—")[0].trim()}</div>
+                <div style={{ height:5, borderRadius:3, background:L.line, overflow:"hidden" }}>
+                  <div style={{ height:"100%", width:`${mostRecent.data.score}%`, background:mostRecent.q.color, borderRadius:3 }}/>
                 </div>
-                <Bar pct={avg} color={s.color}/>
-                <div style={{ display:"flex", justifyContent:"space-between", marginTop:7 }}>
-                  <span style={{ fontSize:10, color:TXT2 }}>{scores.length}/{sq.length} done</span>
-                  <span style={{ fontSize:10, color:s.color, fontWeight:600 }}>{avg>0?avg+"%":"Not started"}</span>
-                </div>
+                <div style={{ fontSize:9, color:L.muted, marginTop:4 }}>Last session: {mostRecent.data.score}%</div>
               </div>
-            );
-          })}
-        </div>
-
-        {/* All Quizzes */}
-        <div style={{ fontSize:10, color:TXT2, letterSpacing:"2px", textTransform:"uppercase", fontWeight:600, marginBottom:12 }}>All Quizzes</div>
-        <div style={{ background:SURF, borderRadius:14, border:`1px solid ${BORDER}`, overflow:"hidden", marginBottom:20 }}>
-          {[...QUIZ_REGISTRY, {id:"master",title:"Master Board Exam",icon:"🏆",color:"#6366f1"}].map((quiz,i,arr)=>{
-            const data = getData(quiz.id);
-            return (
-              <div key={quiz.id} style={{ padding:"14px 18px", borderBottom:i<arr.length-1?`1px solid ${BORDER}`:"none",
-                display:"flex", alignItems:"center", gap:12 }}>
-                <div style={{ width:34,height:34,borderRadius:9,background:`${quiz.color}22`,
-                  display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0 }}>
-                  {quiz.icon}
-                </div>
-                <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ fontSize:12,fontWeight:600,color:TXT,marginBottom:4,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>
-                    {quiz.title}
-                  </div>
-                  <Bar pct={data?.score||0} color={quiz.color} h={2}/>
-                </div>
-                <div style={{ textAlign:"right",flexShrink:0,minWidth:50 }}>
-                  {data?<><div style={{fontSize:14,fontWeight:800,color:quiz.color}}>{data.score}%</div>
-                  <div style={{fontSize:9,color:TXT2}}>{data.correct}/{data.total}</div></>
-                  :<div style={{fontSize:10,color:TXT2}}>—</div>}
-                </div>
-                <button onClick={()=>{if(quiz.id==="master"){setMaster350(buildMaster350());setActiveQ("master");}else setActiveQ(quiz.id);}}
-                  style={{background:SURF2,border:`1px solid ${BORDER}`,color:TXT,borderRadius:7,
-                    padding:"5px 12px",fontSize:11,cursor:"pointer",fontFamily:sf,fontWeight:600,flexShrink:0}}>
-                  {data?"Retry":"Start"}
-                </button>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Recommendations */}
-        <div style={{ fontSize:10, color:TXT2, letterSpacing:"2px", textTransform:"uppercase", fontWeight:600, marginBottom:12 }}>Study Recommendations</div>
-        <div style={{ background:SURF, borderRadius:14, border:`1px solid ${BORDER}`, padding:18 }}>
-          {QUIZ_REGISTRY.filter(q=>!getData(q.id)||(getData(q.id)?.score||0)<80).length > 0 ? (
-            QUIZ_REGISTRY.filter(q=>!getData(q.id)||(getData(q.id)?.score||0)<80).map(quiz=>(
-              <div key={quiz.id} style={{ display:"flex",alignItems:"center",gap:12,padding:"11px 0",borderBottom:`1px solid ${BORDER}` }}>
-                <div style={{fontSize:18}}>{quiz.icon}</div>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:12,fontWeight:600,color:TXT}}>{quiz.title}</div>
-                  <div style={{fontSize:10,color:TXT2,marginTop:2}}>
-                    {getData(quiz.id)?`Score: ${getData(quiz.id).score}% → Target: 80%+`:"Not yet attempted"}
-                  </div>
-                </div>
-                <button onClick={()=>setActiveQ(quiz.id)}
-                  style={{background:quiz.color,color:"#fff",border:"none",borderRadius:7,
-                    padding:"6px 14px",fontSize:11,cursor:"pointer",fontFamily:sf,fontWeight:700}}>
-                  Practice
-                </button>
-              </div>
-            ))
+              <div onClick={()=>setActiveQ(mostRecent.q.id)} style={{ flex:"none", background:L.navy, color:"#fff", fontSize:10.5,
+                fontWeight:600, padding:"8px 14px", borderRadius:999, cursor:"pointer" }}>Continue</div>
+            </div>
           ) : (
-            <div style={{ textAlign:"center", padding:"20px 0" }}>
-              <div style={{ fontSize:24, marginBottom:6 }}>🏆</div>
-              <div style={{ fontSize:14, fontWeight:700, color:"#4ade80" }}>All quizzes above 80%!</div>
-              <div style={{ fontSize:11, color:TXT2, marginTop:4 }}>Ready for the Master Exam.</div>
-              <SolidBtn onClick={()=>{setMaster350(buildMaster350());setActiveQ("master");}}
-                style={{ marginTop:14, padding:"10px 24px" }}>Take Master Exam →</SolidBtn>
+            <div style={{ padding:"12px 18px 18px" }}>
+              <div style={{ fontSize:12, color:L.muted, marginBottom:10 }}>You haven't started a quiz yet.</div>
+              <div onClick={()=>setView("library")} style={{ background:L.navy, color:"#fff", fontSize:11, fontWeight:600,
+                padding:"9px 16px", borderRadius:999, display:"inline-block", cursor:"pointer" }}>Browse Library</div>
             </div>
           )}
         </div>
       </div>
-    </div>
-  );
+
+      <div style={{ margin:"12px 20px 0 20px" }}>
+        <div style={{ background:L.card, borderRadius:22, boxShadow:"0 3px 10px -4px rgba(14,35,72,.10)", border:`1px solid ${L.line}` }}>
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 18px 0" }}>
+            <div style={{ fontSize:13.5, fontWeight:600, color:L.ink }}>Today's Goal</div>
+          </div>
+          <div style={{ padding:"10px 18px 16px" }}>
+            <div style={{ fontSize:12.5, fontWeight:600, color:L.ink, marginBottom:9 }}>Answer {DAILY_GOAL} questions</div>
+            <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+              <div style={{ flex:1, height:8, borderRadius:4, background:L.line, overflow:"hidden" }}>
+                <div style={{ height:"100%", width:`${Math.min(100,dailyAnswered/DAILY_GOAL*100)}%`, background:L.blue, borderRadius:4 }}/>
+              </div>
+              <div style={{ fontSize:11, fontWeight:600, color:L.ink }}>{Math.min(dailyAnswered,DAILY_GOAL)} / {DAILY_GOAL}</div>
+              <div style={{ fontSize:15 }}>🏆</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style={{ height:15 }}/>
+    </>
+  ));
+
+  // ── LIBRARY ───────────────────────────────────────────────────
+  if (view === "library") return shell("library", (
+    <>
+      <div style={{ padding:"6px 20px 4px" }}>
+        <h1 style={{ fontSize:20, fontWeight:700, color:L.ink }}>Library</h1>
+        <p style={{ fontSize:11, color:L.muted, marginTop:3 }}>Browse every subject and jump back into studying</p>
+      </div>
+
+      <div style={{ margin:"15px 20px 0" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:8, background:"#fff", border:`1px solid ${L.line}`,
+          borderRadius:999, padding:"11px 16px" }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke={L.muted} strokeWidth="2"/><path d="M21 21l-4-4" stroke={L.muted} strokeWidth="2" strokeLinecap="round"/></svg>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search subjects, topics..."
+            style={{ border:"none", outline:"none", fontSize:11.5, color:L.ink, fontFamily:pf, flex:1, background:"transparent" }}/>
+        </div>
+      </div>
+
+      <div style={{ margin:"12px 20px 0", display:"flex", gap:8, overflowX:"auto", paddingBottom:2 }}>
+        {[{id:"all",label:"All"},{id:"all-prof",label:"Professional Ed"},{id:"all-gened",label:"General Ed"}].map(f=>(
+          <div key={f.id} onClick={()=>setFilterS(f.id)} style={{ flex:"none", padding:"7px 14px", borderRadius:999, fontSize:10.5,
+            fontWeight:600, whiteSpace:"nowrap", cursor:"pointer",
+            background: filterS===f.id ? L.navy : "#fff", color: filterS===f.id ? "#fff" : L.muted,
+            border: filterS===f.id ? "none" : `1px solid ${L.line}` }}>{f.label}</div>
+        ))}
+      </div>
+
+      <div style={{ margin:"12px 20px 0" }}>
+        <div onClick={()=>{setMaster350(buildMaster350());setActiveQ("master");}}
+          style={{ background:L.navy, borderRadius:16, padding:"14px 16px", cursor:"pointer", color:"#fff",
+            display:"flex", alignItems:"center", justifyContent:"space-between", gap:10 }}>
+          <div>
+            <div style={{ fontSize:9, color:L.gold, letterSpacing:1, textTransform:"uppercase", fontWeight:700, marginBottom:4 }}>Comprehensive Exam</div>
+            <div style={{ fontSize:13, fontWeight:700 }}>Master Board Exam — 350Q</div>
+            {getData("master") && <div style={{ fontSize:10, color:"#c9d2e2", marginTop:3 }}>Last: {getData("master").score}%</div>}
+          </div>
+          <div style={{ fontSize:10.5, fontWeight:700, color:L.navy, background:L.gold, padding:"8px 12px", borderRadius:999, flex:"none" }}>Start →</div>
+        </div>
+      </div>
+
+      <div style={{ margin:"15px 20px 0" }}>
+        <div style={{ background:L.card, borderRadius:22, boxShadow:"0 3px 10px -4px rgba(14,35,72,.10)", border:`1px solid ${L.line}`, overflow:"hidden" }}>
+          {filtered.length===0 && <div style={{ padding:24, textAlign:"center", fontSize:12, color:L.muted }}>No quizzes match your search.</div>}
+          {filtered.map((quiz,i) => {
+            const data = getData(quiz.id);
+            const tint = data ? `${quiz.color}22` : L.bg;
+            return (
+              <div key={quiz.id} onClick={()=>setActiveQ(quiz.id)} style={{ display:"flex", alignItems:"center", gap:12, padding:14, cursor:"pointer",
+                borderTop: i>0 ? `1px solid ${L.line}` : "none" }}>
+                <div style={{ width:42, height:42, borderRadius:12, flex:"none", background:tint,
+                  display:"flex", alignItems:"center", justifyContent:"center", fontSize:19 }}>{quiz.icon}</div>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontSize:12.5, fontWeight:600, color:L.ink, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                    {quiz.title.split("—")[0].trim()}
+                  </div>
+                  <div style={{ fontSize:9.5, color:L.muted, marginTop:3 }}>{quiz.questions.length} items · {quiz.category==="gened"?"General Education":"Professional Education"}</div>
+                  <div style={{ height:4, borderRadius:2, background:L.line, marginTop:6, overflow:"hidden" }}>
+                    <div style={{ height:"100%", width:`${data?.score||0}%`, borderRadius:2, background:quiz.color }}/>
+                  </div>
+                </div>
+                <div style={{ fontSize:12, fontWeight:700, color: data?quiz.color:L.muted, flex:"none" }}>{data ? `${data.score}%` : "—"}</div>
+                <svg width="7" height="12" viewBox="0 0 7 12" fill="none" style={{ flex:"none" }}><path d="M1 1l5 5-5 5" stroke={L.muted} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <div style={{ height:15 }}/>
+    </>
+  ));
+
+  // ── DASHBOARD ─────────────────────────────────────────────────
+  if (view === "dashboard") return shell("dashboard", (
+    <>
+      <div style={{ padding:"6px 20px 4px" }}>
+        <h1 style={{ fontSize:20, fontWeight:700, color:L.ink }}>Dashboard</h1>
+        <p style={{ fontSize:11, color:L.muted, marginTop:3 }}>Your performance at a glance</p>
+      </div>
+
+      <div style={{ margin:"15px 20px 0", display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+        {[
+          { v:questionsAnswered.toLocaleString(), l:"Questions Answered", icon:<svg width="26" height="26" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke={L.blue} strokeWidth="1.6"/><path d="M12 7v5l4 2" stroke={L.blue} strokeWidth="1.6" strokeLinecap="round"/></svg> },
+          { v:totalMastery()+"%", l:"Overall Mastery", icon:<svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4L12 2z" stroke={L.green} strokeWidth="1.4" strokeLinejoin="round"/></svg> },
+          { v:streak+" Day"+(streak===1?"":"s"), l:"Current Streak", icon:<svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M12 2c3 4-2 5-2 9a4 4 0 108 0c0-1.5-.6-2.3-1.2-3.1.4 2-1 3-1.8 2C16 8 15 5 12 2z" fill={L.orange}/></svg> },
+          { v:`${completedCount}/${QUIZ_REGISTRY.length}`, l:"Quizzes Completed", icon:<svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M12 2l3 6 6.5.9-4.7 4.6L18 20l-6-3.4L6 20l1.2-6.5L2.5 8.9 9 8l3-6z" fill={L.purple}/></svg> },
+        ].map(t => (
+          <div key={t.l} style={{ background:"#fff", border:`1px solid ${L.line}`, borderRadius:16, padding:14 }}>
+            <div style={{ marginBottom:8 }}>{t.icon}</div>
+            <div style={{ fontSize:17, fontWeight:700, color:L.ink }}>{t.v}</div>
+            <div style={{ fontSize:9.5, color:L.muted, marginTop:2 }}>{t.l}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ margin:"12px 20px 0" }}>
+        <div style={{ background:"#fff", border:`1px solid ${L.line}`, borderRadius:16, padding:"14px 18px" }}>
+          <div style={{ fontSize:13.5, fontWeight:600, color:L.ink, marginBottom:2 }}>Subject Performance</div>
+          <div onClick={()=>{setFilterS("all-prof");setView("library");}} style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 0", cursor:"pointer" }}>
+            <div style={{ width:9, height:9, borderRadius:"50%", background:L.green, flex:"none" }}/>
+            <div style={{ fontSize:10.5, color:L.ink, width:110, flex:"none" }}>Professional Ed</div>
+            <div style={{ flex:1, height:7, borderRadius:4, background:L.line, overflow:"hidden" }}><div style={{ height:"100%", width:`${avgOf(profSubset)}%`, background:L.green, borderRadius:4 }}/></div>
+            <div style={{ fontSize:10.5, fontWeight:700, color:L.ink, width:32, textAlign:"right", flex:"none" }}>{avgOf(profSubset)}%</div>
+          </div>
+          <div onClick={()=>{setFilterS("all-gened");setView("library");}} style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 0", cursor:"pointer" }}>
+            <div style={{ width:9, height:9, borderRadius:"50%", background:L.purple, flex:"none" }}/>
+            <div style={{ fontSize:10.5, color:L.ink, width:110, flex:"none" }}>General Ed</div>
+            <div style={{ flex:1, height:7, borderRadius:4, background:L.line, overflow:"hidden" }}><div style={{ height:"100%", width:`${avgOf(genSubset)}%`, background:L.purple, borderRadius:4 }}/></div>
+            <div style={{ fontSize:10.5, fontWeight:700, color:L.ink, width:32, textAlign:"right", flex:"none" }}>{avgOf(genSubset)}%</div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ margin:"12px 20px 0" }}>
+        <div style={{ background:"#fff", border:`1px solid ${L.line}`, borderRadius:16, padding:"14px 18px" }}>
+          <div style={{ fontSize:13.5, fontWeight:600, color:L.ink, marginBottom:12 }}>All Quizzes</div>
+          {[...QUIZ_REGISTRY, {id:"master",title:"Master Board Exam",icon:"🏆",color:L.navy}].map((quiz,i)=>{
+            const data = getData(quiz.id);
+            return (
+              <div key={quiz.id} style={{ display:"flex", alignItems:"center", gap:10, padding:"9px 0",
+                borderTop: i>0 ? `1px solid ${L.line}` : "none" }}>
+                <div style={{ width:30, height:30, borderRadius:9, background:`${quiz.color}22`, display:"flex",
+                  alignItems:"center", justifyContent:"center", fontSize:13, flex:"none" }}>{quiz.icon}</div>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontSize:11, fontWeight:600, color:L.ink, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{quiz.title}</div>
+                  <div style={{ height:3, borderRadius:2, background:L.line, marginTop:5, overflow:"hidden" }}><div style={{ height:"100%", width:`${data?.score||0}%`, background:quiz.color, borderRadius:2 }}/></div>
+                </div>
+                <div style={{ textAlign:"right", flex:"none", minWidth:36, fontSize:11, fontWeight:700, color: data?quiz.color:L.muted }}>{data?`${data.score}%`:"—"}</div>
+                <div onClick={()=>{if(quiz.id==="master"){setMaster350(buildMaster350());setActiveQ("master");}else setActiveQ(quiz.id);}}
+                  style={{ fontSize:9.5, fontWeight:600, color:L.blue, cursor:"pointer", flex:"none", padding:"4px 8px" }}>{data?"Retry":"Start"}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div style={{ margin:"12px 20px 0" }}>
+        <div style={{ background:"#fff", border:`1px solid ${L.line}`, borderRadius:16, padding:"14px 18px" }}>
+          <div style={{ fontSize:13.5, fontWeight:600, color:L.ink, marginBottom:10 }}>Study Recommendations</div>
+          {QUIZ_REGISTRY.filter(q=>!getData(q.id)||(getData(q.id)?.score||0)<80).length > 0 ? (
+            QUIZ_REGISTRY.filter(q=>!getData(q.id)||(getData(q.id)?.score||0)<80).map((quiz,i)=>(
+              <div key={quiz.id} style={{ display:"flex", alignItems:"center", gap:10, padding:"9px 0",
+                borderTop: i>0 ? `1px solid ${L.line}` : "none" }}>
+                <div style={{ fontSize:16 }}>{quiz.icon}</div>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontSize:11, fontWeight:600, color:L.ink }}>{quiz.title}</div>
+                  <div style={{ fontSize:9.5, color:L.muted, marginTop:2 }}>{getData(quiz.id)?`Score: ${getData(quiz.id).score}% → Target: 80%+`:"Not yet attempted"}</div>
+                </div>
+                <div onClick={()=>setActiveQ(quiz.id)} style={{ background:quiz.color, color:"#fff", fontSize:10, fontWeight:600,
+                  padding:"6px 12px", borderRadius:999, cursor:"pointer", flex:"none" }}>Practice</div>
+              </div>
+            ))
+          ) : (
+            <div style={{ textAlign:"center", padding:"14px 0" }}>
+              <div style={{ fontSize:22, marginBottom:6 }}>🏆</div>
+              <div style={{ fontSize:13, fontWeight:700, color:L.green }}>All quizzes above 80%!</div>
+              <div style={{ fontSize:11, color:L.muted, marginTop:4 }}>Ready for the Master Exam.</div>
+            </div>
+          )}
+        </div>
+      </div>
+      <div style={{ height:15 }}/>
+    </>
+  ));
+
+  // ── MASTER EXAM (landing) ────────────────────────────────────
+  if (view === "master") return shell("master", (
+    <>
+      <div style={{ padding:"6px 20px 4px" }}>
+        <h1 style={{ fontSize:20, fontWeight:700, color:L.ink }}>Master Exam</h1>
+        <p style={{ fontSize:11, color:L.muted, marginTop:3 }}>Simulate the real board exam experience</p>
+      </div>
+
+      <div style={{ margin:"15px 20px 0" }}>
+        <div style={{ background:L.navy, borderRadius:22, padding:20, color:"#fff" }}>
+          <div style={{ fontSize:14.5, fontWeight:600, marginBottom:16 }}>Exam Readiness</div>
+          <div style={{ display:"flex", alignItems:"center", gap:18 }}>
+            <div style={{ width:100, height:100, borderRadius:"50%", flex:"none",
+              background:`conic-gradient(${L.gold} 0deg ${totalMastery()*3.6}deg, rgba(255,255,255,.14) ${totalMastery()*3.6}deg 360deg)`,
+              display:"flex", alignItems:"center", justifyContent:"center", position:"relative" }}>
+              <div style={{ position:"absolute", inset:11, borderRadius:"50%", background:L.navy }}/>
+              <div style={{ position:"relative", textAlign:"center" }}>
+                <div style={{ fontSize:20, fontWeight:700 }}>{totalMastery()}%</div>
+                <div style={{ fontSize:8.5, color:"#c9d2e2", marginTop:1 }}>Ready</div>
+              </div>
+            </div>
+            <div style={{ flex:1, fontSize:10.5, color:"#c9d2e2", lineHeight:1.6 }}>
+              {completedCount === 0
+                ? "Start reviewing to build your readiness score before taking the full 350-question exam."
+                : avgOf(genSubset) < avgOf(profSubset)
+                  ? <>You're on track. Keep reviewing weak topics in <b style={{ color:"#fff" }}>General Education</b> to boost your score before exam day.</>
+                  : <>You're on track. Keep reviewing weak topics in <b style={{ color:"#fff" }}>Professional Education</b> to boost your score before exam day.</>}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ margin:"15px 20px 0" }}>
+        <div onClick={()=>{setMaster350(buildMaster350());setActiveQ("master");}}
+          style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:8, background:L.gold, color:L.navy,
+            fontSize:13, fontWeight:700, padding:14, borderRadius:16, cursor:"pointer" }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 3l14 9-14 9V3z" fill={L.navy}/></svg>
+          Take Master Exam — 350Q
+        </div>
+      </div>
+
+      <div style={{ margin:"12px 20px 0" }}>
+        <div style={{ fontSize:13.5, fontWeight:600, color:L.ink, marginBottom:10 }}>Practice Exams</div>
+        <div style={{ background:"#fff", border:`1px solid ${L.line}`, borderRadius:22 }}>
+          {[
+            { name:"Full Mock Exam", meta:"350 items · All subjects", icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="18" rx="2" stroke={L.blue} strokeWidth="1.6"/><path d="M8 8h8M8 12h8M8 16h5" stroke={L.blue} strokeWidth="1.6" strokeLinecap="round"/></svg>, tint:L.blueTint, action:()=>{setMaster350(buildMaster350());setActiveQ("master");} },
+            { name:"Professional Education Set", meta:`${profSubset.reduce((a,q)=>a+q.questions.length,0)} items · 3 quizzes`, icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke={L.orange} strokeWidth="1.6"/><path d="M12 7v5l4 2" stroke={L.orange} strokeWidth="1.6" strokeLinecap="round"/></svg>, tint:L.orangeTint, action:()=>{setFilterS("all-prof");setView("library");} },
+            { name:"General Education Set", meta:`${genSubset.reduce((a,q)=>a+q.questions.length,0)} items · 9 quizzes`, icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4L12 2z" stroke={L.purple} strokeWidth="1.4" strokeLinejoin="round"/></svg>, tint:L.purpleTint, action:()=>{setFilterS("all-gened");setView("library");} },
+          ].map((e,i)=>(
+            <div key={e.name} style={{ display:"flex", alignItems:"center", gap:12, padding:14, borderTop: i>0?`1px solid ${L.line}`:"none" }}>
+              <div style={{ width:44, height:44, borderRadius:12, flex:"none", background:e.tint, display:"flex", alignItems:"center", justifyContent:"center" }}>{e.icon}</div>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ fontSize:12.5, fontWeight:600, color:L.ink }}>{e.name}</div>
+                <div style={{ fontSize:9.5, color:L.muted, marginTop:3 }}>{e.meta}</div>
+              </div>
+              <div onClick={e.action} style={{ flex:"none", background:L.navyNav, color:"#fff", fontSize:10, fontWeight:600,
+                padding:"8px 13px", borderRadius:999, cursor:"pointer" }}>Start</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{ height:15 }}/>
+    </>
+  ));
+
+  // ── PROFILE ───────────────────────────────────────────────────
+  if (view === "profile") return shell("profile", (
+    <>
+      <div style={{ display:"flex", flexDirection:"column", alignItems:"center", padding:"8px 20px 4px", textAlign:"center" }}>
+        <div style={{ width:76, height:76, borderRadius:"50%", background:L.navy, display:"flex", alignItems:"center",
+          justifyContent:"center", color:L.gold, fontSize:24, fontWeight:700, border:`3px solid ${L.gold}` }}>
+          {(user||"?").slice(0,2).toUpperCase()}
+        </div>
+        <h2 style={{ fontSize:16, fontWeight:700, color:L.ink, marginTop:10 }}>{user}</h2>
+        <p style={{ fontSize:10.5, color:L.muted, marginTop:2 }}>{isAdmin ? "Administrator" : "Future Teacher"}</p>
+      </div>
+
+      <div style={{ display:"flex", margin:"14px 20px 0", background:"#fff", border:`1px solid ${L.line}`, borderRadius:16, overflow:"hidden" }}>
+        {[
+          { n:streak, l:"Day Streak" },
+          { n:completedCount, l:"Quizzes Done" },
+          { n:totalMastery()+"%", l:"Mastery" },
+        ].map((s,i)=>(
+          <div key={s.l} style={{ flex:1, textAlign:"center", padding:"12px 4px", borderLeft: i>0?`1px solid ${L.line}`:"none" }}>
+            <div style={{ fontSize:15, fontWeight:700, color:L.ink }}>{s.n}</div>
+            <div style={{ fontSize:8.5, color:L.muted, marginTop:2 }}>{s.l}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ margin:"15px 20px 0" }}>
+        <div style={{ background:"#fff", border:`1px solid ${L.line}`, borderRadius:16 }}>
+          {[
+            { label:"Library", action:()=>setView("library") },
+            { label:"Dashboard", action:()=>setView("dashboard") },
+            ...(isAdmin ? [{ label:"Admin Panel", action:()=>setView("admin"), color:L.blue }] : []),
+          ].map((m,i)=>(
+            <div key={m.label} onClick={m.action} style={{ display:"flex", alignItems:"center", gap:12, padding:"13px 14px",
+              cursor:"pointer", borderTop: i>0?`1px solid ${L.line}`:"none" }}>
+              <div style={{ flex:1, fontSize:11.5, fontWeight:600, color:m.color||L.ink }}>{m.label}</div>
+              <svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke={L.muted} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </div>
+          ))}
+          <div onClick={handleLogout} style={{ display:"flex", alignItems:"center", gap:12, padding:"13px 14px",
+            cursor:"pointer", borderTop:`1px solid ${L.line}` }}>
+            <div style={{ flex:1, fontSize:11.5, fontWeight:600, color:"#E5484D" }}>Log Out</div>
+          </div>
+        </div>
+      </div>
+      <div style={{ height:15 }}/>
+    </>
+  ));
 
   return null;
 }
