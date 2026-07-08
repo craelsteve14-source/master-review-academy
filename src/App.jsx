@@ -821,13 +821,17 @@ function LibraryGroup({ label, icon, subtitle, color, quizzes, storage, onStart 
 }
 function QuizEngine({ rawQuestions, title, quizId, accentColor, onExit, username }) {
   const storage = useStorage(username);
-  const [questions]  = useState(() => buildOrder(rawQuestions));
-  const [idx,   setIdx]   = useState(0);
+  const progressKey = `progress_${quizId}`;
+  const saved = storage.get(progressKey);
+  const validSaved = !!(saved && Array.isArray(saved.questions) && saved.questions.length === rawQuestions.length && saved.idx < saved.questions.length);
+
+  const [questions]  = useState(() => validSaved ? saved.questions : buildOrder(rawQuestions));
+  const [idx,   setIdx]   = useState(() => validSaved ? saved.idx : 0);
   const [sel,   setSel]   = useState(null);
   const [shown, setShown] = useState(false);
-  const [correct,setCorrect] = useState(0);
-  const [wrong,  setWrong]   = useState(0);
-  const [missed, setMissed]  = useState([]);
+  const [correct,setCorrect] = useState(() => validSaved ? saved.correct : 0);
+  const [wrong,  setWrong]   = useState(() => validSaved ? saved.wrong : 0);
+  const [missed, setMissed]  = useState(() => validSaved ? saved.missed : []);
   const [phase,  setPhase]   = useState("quiz");
   const [ckpt,   setCkpt]    = useState(null);
   const ref = useRef(null);
@@ -838,6 +842,12 @@ function QuizEngine({ rawQuestions, title, quizId, accentColor, onExit, username
   const acc      = answered > 0 ? Math.round(correct / answered * 100) : 0;
   const prog     = Math.round(idx / total * 100);
   const every    = total >= 150 ? 50 : total >= 100 ? 25 : 20;
+
+  // Save progress after every answered question so exiting mid-quiz resumes
+  // where you left off instead of restarting at Question 1.
+  useEffect(() => {
+    storage.set(progressKey, { questions, idx, correct, wrong, missed });
+  }, [idx, correct, wrong, missed]); // eslint-disable-line
 
   function submit() {
     if (!sel || shown) return;
@@ -854,6 +864,7 @@ function QuizEngine({ rawQuestions, title, quizId, accentColor, onExit, username
       const fc = correct + (sel === getA(q) ? 1 : 0);
       const score = Math.round(fc / total * 100);
       storage.set(`quiz_${quizId}`, { score, correct: fc, total, date: new Date().toISOString() });
+      storage.set(progressKey, null);
       setPhase("results");
       return;
     }
