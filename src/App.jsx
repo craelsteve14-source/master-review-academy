@@ -125,6 +125,25 @@ const ADMIN_USER = "crael";
 const ADMIN_PASS = "ftrc2024";
 
 // ═══════════════════════════════════════════════════════════════════
+// RESPONSIVE — phone / tablet / desktop breakpoints
+// ═══════════════════════════════════════════════════════════════════
+function useViewport() {
+  const getBp = () => {
+    const w = window.innerWidth;
+    if (w >= 1100) return "desktop";
+    if (w >= 768) return "tablet";
+    return "phone";
+  };
+  const [bp, setBp] = useState(getBp);
+  useEffect(() => {
+    const onResize = () => setBp(getBp());
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  return bp;
+}
+
+// ═══════════════════════════════════════════════════════════════════
 // STORAGE — per-user isolation + Supabase sync
 // ═══════════════════════════════════════════════════════════════════
 function useStorage(username) {
@@ -341,23 +360,27 @@ function Mascot({ pose = "idle", size = 92 }) {
 }
 
 function MascotBubble({ children, tailSide = "left" }) {
+  const tailPos = tailSide === "bottom"
+    ? { bottom: -6, right: 30 }
+    : { top: "50%", [tailSide]: -6, transform: "translateY(-50%)" };
+  const tailShadow = tailSide === "bottom" ? "3px 3px 5px -4px rgba(14,35,72,.15)"
+    : tailSide === "right" ? "3px -3px 5px -4px rgba(14,35,72,.15)" : "-3px 3px 5px -4px rgba(14,35,72,.15)";
   return (
     <div style={{ background: "#fff", borderRadius: 16, padding: "12px 14px",
       fontSize: 12, color: L.ink, lineHeight: 1.55, boxShadow: "0 4px 14px -4px rgba(14,35,72,.18)",
       animation: "mraBubbleIn .35s ease", position: "relative", flex: 1, minWidth: 0 }}>
       {children}
-      <div style={{ position: "absolute", top: "50%", [tailSide]: -6, width: 14, height: 14, background: "#fff",
-        transform: "translateY(-50%) rotate(45deg)",
-        boxShadow: tailSide === "right" ? "3px -3px 5px -4px rgba(14,35,72,.15)" : "-3px 3px 5px -4px rgba(14,35,72,.15)" }} />
+      <div style={{ position: "absolute", width: 14, height: 14, background: "#fff", ...tailPos,
+        transform: `${tailPos.transform||""} rotate(45deg)`.trim(), boxShadow: tailShadow }} />
     </div>
   );
 }
 
-function MascotStrip({ pose = "idle", size = 66, message }) {
+function MascotStrip({ pose = "idle", size = 108, message }) {
   return (
-    <div style={{ margin: "12px 20px 0", display: "flex", alignItems: "center", gap: 10 }}>
+    <div style={{ margin: "12px 20px 0", display: "flex", flexDirection: "row-reverse", alignItems: "center", gap: 12 }}>
       <Mascot pose={pose} size={size}/>
-      <MascotBubble tailSide="left">{message}</MascotBubble>
+      <MascotBubble tailSide="right">{message}</MascotBubble>
     </div>
   );
 }
@@ -374,6 +397,48 @@ function BottomNav({ active, onNav }) {
           <span style={{ fontSize:9, fontWeight:500 }}>{n.label}</span>
         </button>
       ))}
+    </div>
+  );
+}
+
+function Sidebar({ active, onNav, user, isAdmin, onAdmin, onLogout }) {
+  return (
+    <div style={{ width: 232, flex: "none", background: L.navyNav, minHeight: "100vh",
+      display: "flex", flexDirection: "column", padding: "24px 0" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 9, padding: "0 22px 26px" }}>
+        <svg width="28" height="24" viewBox="0 0 26 22" style={{ flex: "none" }}><path d="M13 0L26 5.5L13 11L0 5.5L13 0Z" fill={L.gold}/><path d="M6 8V14C6 14 9 17 13 17C17 17 20 14 20 14V8L13 11L6 8Z" fill={L.gold}/></svg>
+        <div style={{ lineHeight: 1.15 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>MASTER REVIEW</div>
+          <div style={{ fontSize: 9, color: "#8a93a8" }}>ACADEMY</div>
+        </div>
+      </div>
+      <div style={{ flex: 1 }}>
+        {LNAV_ITEMS.map(n => (
+          <div key={n.id} onClick={()=>onNav(n.id)} style={{ display:"flex", alignItems:"center", gap:12,
+            padding:"12px 22px", cursor:"pointer", color: active===n.id ? L.gold : "#c3c9d6",
+            background: active===n.id ? "rgba(240,186,72,.1)" : "transparent",
+            borderLeft: active===n.id ? `3px solid ${L.gold}` : "3px solid transparent", fontFamily:pf }}>
+            <NavIcon type={n.icon} active={active===n.id}/>
+            <span style={{ fontSize:12.5, fontWeight:600 }}>{n.label}</span>
+          </div>
+        ))}
+        {isAdmin && (
+          <div onClick={onAdmin} style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 22px",
+            cursor:"pointer", color:"#7fb3e8", fontFamily:pf }}>
+            <span style={{ fontSize:12.5, fontWeight:600 }}>Admin Panel</span>
+          </div>
+        )}
+      </div>
+      <div style={{ padding:"14px 22px 0", borderTop:"1px solid rgba(255,255,255,.1)" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:12 }}>
+          <div style={{ width:34, height:34, borderRadius:"50%", background:L.gold, color:L.navy, fontWeight:700,
+            fontSize:12.5, display:"flex", alignItems:"center", justifyContent:"center", flex:"none" }}>
+            {(user||"?").slice(0,2).toUpperCase()}
+          </div>
+          <span style={{ fontSize:12, fontWeight:600, color:"#fff", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{user}</span>
+        </div>
+        <div onClick={onLogout} style={{ fontSize:11.5, fontWeight:600, color:"#E5484D", cursor:"pointer" }}>Log Out</div>
+      </div>
     </div>
   );
 }
@@ -949,9 +1014,11 @@ function QuizEngine({ rawQuestions, title, quizId, accentColor, onExit, username
         <div style={{ fontSize:11, color:accentColor, letterSpacing:"2px", textTransform:"uppercase", fontWeight:700, marginBottom:16 }}>
           Progress Report · Q{ckpt.ni} of {total}
         </div>
-        <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:20 }}>
-          <Mascot pose={ckpt.acc >= 70 ? "happy" : "idle"} size={90}/>
-          <MascotBubble>{ckpt.acc >= 70 ? "You're doing great — keep it up!" : "Stay focused, you've got this!"}</MascotBubble>
+        <div style={{ display:"flex", flexDirection:"column", gap:6, marginBottom:24 }}>
+          <MascotBubble tailSide="bottom">{ckpt.acc >= 70 ? "You're doing great — keep it up!" : "Stay focused, you've got this!"}</MascotBubble>
+          <div style={{ display:"flex", justifyContent:"flex-end" }}>
+            <Mascot pose={ckpt.acc >= 70 ? "happy" : "idle"} size={140}/>
+          </div>
         </div>
         <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:24 }}>
           {[{l:"Correct",v:ckpt.correct,c:L.green},{l:"Wrong",v:ckpt.wrong,c:"#E5484D"},{l:"Accuracy",v:ckpt.acc+"%",c:accentColor},{l:"Left",v:total-ckpt.ni,c:L.muted}].map(s=>(
@@ -985,7 +1052,7 @@ function QuizEngine({ rawQuestions, title, quizId, accentColor, onExit, username
               <div style={{ fontSize:16, fontWeight:700, color:gr.c, marginTop:6 }}>{gr.l}</div>
               <div style={{ fontSize:11, color:L.muted, marginTop:6 }}>{correct} correct · {wrong} incorrect · {total} total questions</div>
             </div>
-            <Mascot pose={finalScore >= 80 ? "happy" : finalScore >= 50 ? "idle" : "oops"} size={110}/>
+            <Mascot pose={finalScore >= 80 ? "happy" : finalScore >= 50 ? "idle" : "oops"} size={132}/>
           </div>
 
           {/* Diff breakdown */}
@@ -1105,14 +1172,15 @@ function QuizEngine({ rawQuestions, title, quizId, accentColor, onExit, username
               </button>
             ) : (
               <>
-                <div style={{ display:"flex", flexDirection:"row-reverse", gap:14, alignItems:"center",
-                  marginTop:6, marginBottom:8 }}>
-                  <Mascot pose={ok ? "happy" : "oops"} size={126}/>
-                  <MascotBubble tailSide="right">
+                <div style={{ display:"flex", flexDirection:"column", gap:6, marginTop:6, marginBottom:8 }}>
+                  <MascotBubble tailSide="bottom">
                     <div style={{ fontSize:10.5, fontWeight:600, marginBottom:4, color:L.muted }}>{feedbackMsg}</div>
                     <div style={{ fontWeight:700, marginBottom:4, color:ok?"#177A42":"#C22A2F" }}>{ok?"Correct.":"Incorrect. Answer: "+getA(q)}</div>
                     <div style={{ color:L.ink }}>{getE(q)}</div>
                   </MascotBubble>
+                  <div style={{ display:"flex", justifyContent:"flex-end" }}>
+                    <Mascot pose={ok ? "happy" : "oops"} size={158}/>
+                  </div>
                 </div>
                 <button onClick={next}
                   style={{ width:"100%", background:L.navy, color:"#fff", border:"none", borderRadius:11,
@@ -1146,6 +1214,7 @@ export default function MasterReviewAcademy() {
   const [master350,setMaster350]= useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [homeMsg] = useState(() => pickMsg("idle"));
+  const viewport = useViewport();
 
   // Save session to localStorage whenever it changes
   useEffect(() => {
@@ -1221,22 +1290,39 @@ export default function MasterReviewAcademy() {
     .sort((a,b) => new Date(b.data.date) - new Date(a.data.date))[0];
   const dailyAnswered = getDailyAnswered(storage);
 
-  const shell = (active, content) => (
-    <div style={{ background:L.bg, minHeight:"100vh", display:"flex", justifyContent:"center", fontFamily:pf }}>
-      <div style={{ width:"100%", maxWidth:480, minHeight:"100vh", display:"flex", flexDirection:"column", background:L.bg }}>
-        <LHeader user={user} onMenu={()=>setMenuOpen(true)} onBell={()=>{}}/>
-        {content}
-        <BottomNav active={active} onNav={v => {
-          if (v === "master") { setView("master"); return; }
-          setView(v);
-        }}/>
+  const shell = (active, content) => {
+    const nav = v => setView(v === "master" ? "master" : v);
+
+    if (viewport === "desktop") return (
+      <div style={{ background:L.bg, minHeight:"100vh", display:"flex", fontFamily:pf }}>
+        <Sidebar active={active} onNav={nav} user={user} isAdmin={isAdmin}
+          onAdmin={()=>setView("admin")} onLogout={handleLogout}/>
+        <div style={{ flex:1, minHeight:"100vh", display:"flex", justifyContent:"center" }}>
+          <div style={{ width:"100%", maxWidth:900, display:"flex", flexDirection:"column" }}>
+            <div style={{ height:60, padding:"0 8px 0 28px", display:"flex", alignItems:"center", justifyContent:"flex-end" }}>
+              <svg width="20" height="22" viewBox="0 0 20 22"><path d="M10 0C7.79 0 6 1.79 6 4V4.6C3.6 5.7 2 8.1 2 11V15L0 18H20L18 15V11C18 8.1 16.4 5.7 14 4.6V4C14 1.79 12.21 0 10 0Z" fill={L.ink}/><path d="M7 19C7 20.66 8.34 22 10 22C11.66 22 13 20.66 13 19H7Z" fill={L.ink}/></svg>
+            </div>
+            {content}
+          </div>
+        </div>
       </div>
-      {menuOpen && <LMenu user={user} isAdmin={isAdmin} onClose={()=>setMenuOpen(false)}
-        onNav={v=>{setMenuOpen(false); setView(v==="master"?"master":v);}}
-        onAdmin={()=>{setMenuOpen(false); setView("admin");}}
-        onLogout={()=>{setMenuOpen(false); handleLogout();}}/>}
-    </div>
-  );
+    );
+
+    const contentMaxWidth = viewport === "tablet" ? 720 : 480;
+    return (
+      <div style={{ background:L.bg, minHeight:"100vh", display:"flex", justifyContent:"center", fontFamily:pf }}>
+        <div style={{ width:"100%", maxWidth:contentMaxWidth, minHeight:"100vh", display:"flex", flexDirection:"column", background:L.bg }}>
+          <LHeader user={user} onMenu={()=>setMenuOpen(true)} onBell={()=>{}}/>
+          {content}
+          <BottomNav active={active} onNav={nav}/>
+        </div>
+        {menuOpen && <LMenu user={user} isAdmin={isAdmin} onClose={()=>setMenuOpen(false)}
+          onNav={v=>{setMenuOpen(false); nav(v);}}
+          onAdmin={()=>{setMenuOpen(false); setView("admin");}}
+          onLogout={()=>{setMenuOpen(false); handleLogout();}}/>}
+      </div>
+    );
+  };
 
   const SubjRing = ({ pct, color, tint }) => (
     <div style={{ width:52, height:52, borderRadius:"50%", margin:"8px auto 6px", display:"flex", alignItems:"center",
@@ -1396,14 +1482,23 @@ export default function MasterReviewAcademy() {
       </div>
 
       <div style={{ margin:"15px 20px 0" }}>
-        <div style={{ background:L.card, borderRadius:22, boxShadow:"0 3px 10px -4px rgba(14,35,72,.10)", border:`1px solid ${L.line}`, overflow:"hidden" }}>
+        <div style={{
+          background: viewport==="phone" ? L.card : "transparent",
+          borderRadius:22, boxShadow: viewport==="phone" ? "0 3px 10px -4px rgba(14,35,72,.10)" : "none",
+          border: viewport==="phone" ? `1px solid ${L.line}` : "none", overflow:"hidden",
+          display: viewport==="phone" ? "block" : "grid",
+          gridTemplateColumns: viewport==="phone" ? undefined : "1fr 1fr", gap: viewport==="phone" ? 0 : 10 }}>
           {filtered.length===0 && <div style={{ padding:24, textAlign:"center", fontSize:12, color:L.muted }}>No quizzes match your search.</div>}
           {filtered.map((quiz,i) => {
             const data = getData(quiz.id);
             const tint = data ? `${quiz.color}22` : L.bg;
             return (
               <div key={quiz.id} onClick={()=>setActiveQ(quiz.id)} style={{ display:"flex", alignItems:"center", gap:12, padding:14, cursor:"pointer",
-                borderTop: i>0 ? `1px solid ${L.line}` : "none" }}>
+                borderTop: viewport==="phone" && i>0 ? `1px solid ${L.line}` : "none",
+                background: viewport==="phone" ? "transparent" : L.card,
+                borderRadius: viewport==="phone" ? 0 : 16,
+                border: viewport==="phone" ? "none" : `1px solid ${L.line}`,
+                boxShadow: viewport==="phone" ? "none" : "0 3px 10px -4px rgba(14,35,72,.10)" }}>
                 <div style={{ width:42, height:42, borderRadius:12, flex:"none", background:tint,
                   display:"flex", alignItems:"center", justifyContent:"center" }}><SubjIcon subjId={quiz.subjId} color={quiz.color} size={20}/></div>
                 <div style={{ flex:1, minWidth:0 }}>
@@ -1436,7 +1531,8 @@ export default function MasterReviewAcademy() {
 
       <MascotStrip message="Let's see how far you've come!"/>
 
-      <div style={{ margin:"15px 20px 0", display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+      <div style={{ margin:"15px 20px 0", display:"grid",
+        gridTemplateColumns: viewport === "phone" ? "1fr 1fr" : "1fr 1fr 1fr 1fr", gap:10 }}>
         {[
           { v:questionsAnswered.toLocaleString(), l:"Questions Answered", icon:<svg width="26" height="26" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke={L.blue} strokeWidth="1.6"/><path d="M12 7v5l4 2" stroke={L.blue} strokeWidth="1.6" strokeLinecap="round"/></svg> },
           { v:totalMastery()+"%", l:"Overall Mastery", icon:<svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4L12 2z" stroke={L.green} strokeWidth="1.4" strokeLinejoin="round"/></svg> },
