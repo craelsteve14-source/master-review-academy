@@ -210,11 +210,11 @@ function getT(q)  { return q.t || q.topic; }
 function getE(q)  { return q.e || q.exp || q.explanation || ""; }
 
 function getRating(p) {
-  if (p >= 95) return { l:"Outstanding",      c:"#10b981", bg:"#022c22", bdr:"#10b981" };
-  if (p >= 90) return { l:"Excellent",         c:"#818cf8", bg:"#1e1b4b", bdr:"#6366f1" };
-  if (p >= 80) return { l:"Very Good",         c:"#38bdf8", bg:"#0c2740", bdr:"#0ea5e9" };
-  if (p >= 70) return { l:"Good",              c:"#fbbf24", bg:"#2c1a00", bdr:"#f59e0b" };
-  return              { l:"Needs Improvement", c:"#f87171", bg:"#2a0a0a", bdr:"#ef4444" };
+  if (p >= 95) return { l:"Outstanding",      c:"#1EA457", bg:"#EAF7EE", bdr:"#1EA457" };
+  if (p >= 90) return { l:"Excellent",         c:"#3580CC", bg:"#EAF2FB", bdr:"#3580CC" };
+  if (p >= 80) return { l:"Very Good",         c:"#B45BF6", bg:"#F6ECFC", bdr:"#B45BF6" };
+  if (p >= 70) return { l:"Good",              c:"#B5790A", bg:"#FEF3E2", bdr:"#F0BA48" };
+  return              { l:"Needs Improvement", c:"#E5484D", bg:"#FDECEC", bdr:"#E5484D" };
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -228,9 +228,9 @@ const BORDER = "#27272f";
 const TXT    = "#fafafa";
 const TXT2   = "#71717a";
 const DIFF   = {
-  easy:     { bg:"#052e16", ring:"#22c55e", text:"#4ade80", label:"Easy"      },
-  moderate: { bg:"#1c1400", ring:"#eab308", text:"#facc15", label:"Moderate"  },
-  difficult:{ bg:"#2d0a1f", ring:"#a855f7", text:"#c084fc", label:"Difficult" },
+  easy:     { bg:"#EAF7EE", ring:"#1EA457", text:"#177A42", label:"Easy"      },
+  moderate: { bg:"#FEF3E2", ring:"#F0BA48", text:"#B5790A", label:"Moderate"  },
+  difficult:{ bg:"#F6ECFC", ring:"#B45BF6", text:"#8A2BE0", label:"Difficult" },
 };
 
 // ═══════════════════════════════════════════════════════════════════
@@ -343,6 +343,19 @@ function LHeader({ user, onMenu, onBell }) {
   );
 }
 
+function LQuizBar({ title, left, right }) {
+  return (
+    <div style={{ background:L.card, borderBottom:`1px solid ${L.line}`, padding:"0 20px", height:54,
+      display:"flex", alignItems:"center", justifyContent:"space-between", position:"sticky", top:0, zIndex:200,
+      fontFamily:pf }}>
+      <div style={{ minWidth:60 }}>{left}</div>
+      <span style={{ fontSize:12.5, fontWeight:700, color:L.ink, letterSpacing:"-0.1px", textAlign:"center",
+        overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{title}</span>
+      <div style={{ minWidth:60, display:"flex", justifyContent:"flex-end" }}>{right}</div>
+    </div>
+  );
+}
+
 function LMenu({ user, isAdmin, onClose, onNav, onAdmin, onLogout }) {
   return (
     <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(14,35,72,.35)", zIndex:300,
@@ -408,7 +421,7 @@ function DiffTag({ diff }) {
   return (
     <span style={{ fontSize:10, fontWeight:700, color:d.text, background:d.bg,
       border:`1px solid ${d.ring}33`, padding:"2px 9px", borderRadius:99,
-      fontFamily:sf, letterSpacing:"0.6px", textTransform:"uppercase" }}>
+      fontFamily:pf, letterSpacing:"0.6px", textTransform:"uppercase" }}>
       {d.label}
     </span>
   );
@@ -861,23 +874,24 @@ function QuizEngine({ rawQuestions, title, quizId, accentColor, onExit, username
 
   // Checkpoint
   if (phase === "checkpoint" && ckpt) return (
-    <div style={{ background:BG, minHeight:"100vh", fontFamily:sf, color:TXT }}>
-      <NavBar title="Checkpoint" right={<GhostBtn onClick={()=>{setPhase("quiz");advance(ckpt.ni);}}>Continue →</GhostBtn>} />
+    <div style={{ background:L.bg, minHeight:"100vh", fontFamily:pf, color:L.ink }}>
+      <LQuizBar title="Checkpoint" right={<span onClick={()=>{setPhase("quiz");advance(ckpt.ni);}} style={{ color:L.blue, fontSize:12, fontWeight:600, cursor:"pointer" }}>Continue →</span>} />
       <div style={{ maxWidth:680, margin:"0 auto", padding:"32px 20px" }}>
         <div style={{ fontSize:11, color:accentColor, letterSpacing:"2px", textTransform:"uppercase", fontWeight:700, marginBottom:16 }}>
           Progress Report · Q{ckpt.ni} of {total}
         </div>
         <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:24 }}>
-          {[{l:"Correct",v:ckpt.correct,c:"#22c55e"},{l:"Wrong",v:ckpt.wrong,c:"#ef4444"},{l:"Accuracy",v:ckpt.acc+"%",c:accentColor},{l:"Left",v:total-ckpt.ni,c:TXT2}].map(s=>(
-            <div key={s.l} style={{ background:SURF, borderRadius:12, padding:"14px 10px", textAlign:"center", border:`1px solid ${BORDER}` }}>
+          {[{l:"Correct",v:ckpt.correct,c:L.green},{l:"Wrong",v:ckpt.wrong,c:"#E5484D"},{l:"Accuracy",v:ckpt.acc+"%",c:accentColor},{l:"Left",v:total-ckpt.ni,c:L.muted}].map(s=>(
+            <div key={s.l} style={{ background:L.card, borderRadius:12, padding:"14px 10px", textAlign:"center", border:`1px solid ${L.line}` }}>
               <div style={{ fontSize:22, fontWeight:800, color:s.c, letterSpacing:"-1px" }}>{s.v}</div>
-              <div style={{ fontSize:10, color:TXT2, marginTop:3, textTransform:"uppercase", letterSpacing:"0.5px" }}>{s.l}</div>
+              <div style={{ fontSize:10, color:L.muted, marginTop:3, textTransform:"uppercase", letterSpacing:"0.5px" }}>{s.l}</div>
             </div>
           ))}
         </div>
-        <SolidBtn onClick={()=>{setPhase("quiz");advance(ckpt.ni);}} color={accentColor} style={{ width:"100%", padding:"13px" }}>
+        <div onClick={()=>{setPhase("quiz");advance(ckpt.ni);}} style={{ width:"100%", background:accentColor, color:"#fff",
+          textAlign:"center", borderRadius:13, padding:"13px", fontSize:13, fontWeight:700, cursor:"pointer", boxSizing:"border-box" }}>
           Continue — Question {ckpt.ni + 1}
-        </SolidBtn>
+        </div>
       </div>
     </div>
   );
@@ -887,19 +901,19 @@ function QuizEngine({ rawQuestions, title, quizId, accentColor, onExit, username
     const finalScore = Math.round(correct / total * 100);
     const gr = getRating(finalScore);
     return (
-      <div style={{ background:BG, minHeight:"100vh", fontFamily:sf, color:TXT }}>
-        <NavBar title="Results" right={<GhostBtn onClick={onExit}>← Library</GhostBtn>} />
+      <div style={{ background:L.bg, minHeight:"100vh", fontFamily:pf, color:L.ink }}>
+        <LQuizBar title="Results" right={<span onClick={onExit} style={{ color:L.blue, fontSize:12, fontWeight:600, cursor:"pointer" }}>← Library</span>} />
         <div style={{ maxWidth:740, margin:"0 auto", padding:"28px 20px" }}>
           <div style={{ background:gr.bg, borderRadius:20, padding:"28px", textAlign:"center", border:`1px solid ${gr.bdr}`, marginBottom:20 }}>
             <div style={{ fontSize:11, color:gr.c, letterSpacing:"2px", textTransform:"uppercase", fontWeight:700, marginBottom:8 }}>Final Score</div>
             <div style={{ fontSize:60, fontWeight:900, color:gr.c, letterSpacing:"-3px", lineHeight:1 }}>{finalScore}%</div>
             <div style={{ fontSize:18, fontWeight:700, color:gr.c, marginTop:6 }}>{gr.l}</div>
-            <div style={{ fontSize:12, color:TXT2, marginTop:6 }}>{correct} correct · {wrong} incorrect · {total} total questions</div>
+            <div style={{ fontSize:12, color:L.muted, marginTop:6 }}>{correct} correct · {wrong} incorrect · {total} total questions</div>
           </div>
 
           {/* Diff breakdown */}
-          <div style={{ background:SURF, borderRadius:14, padding:18, border:`1px solid ${BORDER}`, marginBottom:16 }}>
-            <div style={{ fontSize:10, color:TXT2, letterSpacing:"1.5px", textTransform:"uppercase", fontWeight:600, marginBottom:12 }}>By Difficulty</div>
+          <div style={{ background:L.card, borderRadius:14, padding:18, border:`1px solid ${L.line}`, marginBottom:16 }}>
+            <div style={{ fontSize:10, color:L.muted, letterSpacing:"1.5px", textTransform:"uppercase", fontWeight:600, marginBottom:12 }}>By Difficulty</div>
             {["easy","moderate","difficult"].map(d => {
               const dq = rawQuestions.filter(q=>(q.d||q.diff)===d);
               const dm = missed.filter(q=>(q.d||q.diff)===d);
@@ -908,44 +922,45 @@ function QuizEngine({ rawQuestions, title, quizId, accentColor, onExit, username
                 <div key={d} style={{ marginBottom:10 }}>
                   <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
                     <span style={{ fontSize:11, color:DIFF[d].text, fontWeight:600, textTransform:"capitalize" }}>{d}</span>
-                    <span style={{ fontSize:11, color:TXT2 }}>{dq.length-dm.length}/{dq.length} · {dp}%</span>
+                    <span style={{ fontSize:11, color:L.muted }}>{dq.length-dm.length}/{dq.length} · {dp}%</span>
                   </div>
-                  <Bar pct={dp} color={DIFF[d].ring} h={4}/>
+                  <div style={{ height:4, borderRadius:2, background:L.line, overflow:"hidden" }}><div style={{ height:"100%", width:`${dp}%`, background:DIFF[d].ring, borderRadius:2 }}/></div>
                 </div>
               );
             })}
           </div>
 
           {weakTopics.length > 0 && (
-            <div style={{ background:SURF, borderRadius:14, padding:18, border:`1px solid ${BORDER}`, marginBottom:16 }}>
-              <div style={{ fontSize:10, color:TXT2, letterSpacing:"1.5px", textTransform:"uppercase", fontWeight:600, marginBottom:10 }}>Topics to Review</div>
+            <div style={{ background:L.card, borderRadius:14, padding:18, border:`1px solid ${L.line}`, marginBottom:16 }}>
+              <div style={{ fontSize:10, color:L.muted, letterSpacing:"1.5px", textTransform:"uppercase", fontWeight:600, marginBottom:10 }}>Topics to Review</div>
               <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
-                {weakTopics.map(t=><span key={t} style={{ background:SURF2, border:`1px solid ${BORDER}`, color:TXT, padding:"3px 10px", borderRadius:99, fontSize:11 }}>{t}</span>)}
+                {weakTopics.map(t=><span key={t} style={{ background:L.bg, border:`1px solid ${L.line}`, color:L.ink, padding:"3px 10px", borderRadius:99, fontSize:11 }}>{t}</span>)}
               </div>
             </div>
           )}
 
           {missed.length > 0 && (
-            <div style={{ background:SURF, borderRadius:14, padding:18, border:`1px solid ${BORDER}`, marginBottom:20 }}>
-              <div style={{ fontSize:10, color:TXT2, letterSpacing:"1.5px", textTransform:"uppercase", fontWeight:600, marginBottom:14 }}>
+            <div style={{ background:L.card, borderRadius:14, padding:18, border:`1px solid ${L.line}`, marginBottom:20 }}>
+              <div style={{ fontSize:10, color:L.muted, letterSpacing:"1.5px", textTransform:"uppercase", fontWeight:600, marginBottom:14 }}>
                 Review Guide · {missed.length} missed
               </div>
               {missed.map((w,i)=>(
-                <div key={i} style={{ background:SURF2, borderRadius:10, padding:12, marginBottom:8, borderLeft:`3px solid ${DIFF[getD(w)]?.ring||"#6366f1"}` }}>
+                <div key={i} style={{ background:L.bg, borderRadius:10, padding:12, marginBottom:8, borderLeft:`3px solid ${DIFF[getD(w)]?.ring||L.blue}` }}>
                   <div style={{ display:"flex", gap:8, alignItems:"center", marginBottom:6, flexWrap:"wrap" }}>
                     <DiffTag diff={getD(w)}/>
-                    <span style={{ fontSize:11, color:TXT2 }}>{getT(w)}</span>
+                    <span style={{ fontSize:11, color:L.muted }}>{getT(w)}</span>
                   </div>
-                  <div style={{ fontSize:13, fontWeight:500, color:TXT, marginBottom:6, lineHeight:1.5 }}>{getQ(w)}</div>
-                  <div style={{ fontSize:12, color:"#f87171", marginBottom:3 }}>✗ {w.ya} · {getC(w).find(x=>x.startsWith(w.ya))?.slice(3)}</div>
-                  <div style={{ fontSize:12, color:"#4ade80", marginBottom:4 }}>✓ {getA(w)} · {getC(w).find(x=>x.startsWith(getA(w)))?.slice(3)}</div>
-                  <div style={{ fontSize:12, color:TXT2, lineHeight:1.6 }}>{getE(w)}</div>
+                  <div style={{ fontSize:13, fontWeight:500, color:L.ink, marginBottom:6, lineHeight:1.5 }}>{getQ(w)}</div>
+                  <div style={{ fontSize:12, color:"#E5484D", marginBottom:3 }}>✗ {w.ya} · {getC(w).find(x=>x.startsWith(w.ya))?.slice(3)}</div>
+                  <div style={{ fontSize:12, color:L.green, marginBottom:4 }}>✓ {getA(w)} · {getC(w).find(x=>x.startsWith(getA(w)))?.slice(3)}</div>
+                  <div style={{ fontSize:12, color:L.muted, lineHeight:1.6 }}>{getE(w)}</div>
                 </div>
               ))}
             </div>
           )}
 
-          <SolidBtn onClick={onExit} color={accentColor} style={{ width:"100%", padding:"13px" }}>Back to Library</SolidBtn>
+          <div onClick={onExit} style={{ width:"100%", background:accentColor, color:"#fff", textAlign:"center",
+            borderRadius:13, padding:"13px", fontSize:13, fontWeight:700, cursor:"pointer", boxSizing:"border-box" }}>Back to Library</div>
         </div>
       </div>
     );
@@ -953,15 +968,15 @@ function QuizEngine({ rawQuestions, title, quizId, accentColor, onExit, username
 
   // Quiz
   return (
-    <div style={{ background:BG, minHeight:"100vh", fontFamily:sf, color:TXT }}>
-      <NavBar title={title.length > 30 ? title.slice(0,30)+"…" : title}
-        left={<GhostBtn onClick={onExit}>← Exit</GhostBtn>}
+    <div style={{ background:L.bg, minHeight:"100vh", fontFamily:pf, color:L.ink }}>
+      <LQuizBar title={title.length > 30 ? title.slice(0,30)+"…" : title}
+        left={<span onClick={onExit} style={{ color:L.blue, fontSize:12, fontWeight:600, cursor:"pointer" }}>← Exit</span>}
         right={
           <div style={{ display:"flex", gap:14 }}>
-            {[{v:correct,c:"#4ade80",l:"✓"},{v:wrong,c:"#f87171",l:"✗"},{v:acc+"%",c:TXT,l:"Acc"}].map(s=>(
+            {[{v:correct,c:L.green,l:"✓"},{v:wrong,c:"#E5484D",l:"✗"},{v:acc+"%",c:L.ink,l:"Acc"}].map(s=>(
               <div key={s.l} style={{ textAlign:"right" }}>
                 <div style={{ fontSize:14, fontWeight:800, color:s.c }}>{s.v}</div>
-                <div style={{ fontSize:9, color:TXT2, textTransform:"uppercase", letterSpacing:"0.5px" }}>{s.l}</div>
+                <div style={{ fontSize:9, color:L.muted, textTransform:"uppercase", letterSpacing:"0.5px" }}>{s.l}</div>
               </div>
             ))}
           </div>
@@ -970,35 +985,35 @@ function QuizEngine({ rawQuestions, title, quizId, accentColor, onExit, username
       <div style={{ maxWidth:700, margin:"0 auto", padding:"24px 20px" }} ref={ref}>
         <div style={{ marginBottom:20 }}>
           <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}>
-            <span style={{ fontSize:12, color:TXT2 }}>Question {idx+1} of {total}</span>
-            <span style={{ fontSize:12, color:TXT2 }}>{prog}%</span>
+            <span style={{ fontSize:12, color:L.muted }}>Question {idx+1} of {total}</span>
+            <span style={{ fontSize:12, color:L.muted }}>{prog}%</span>
           </div>
-          <Bar pct={prog} color={accentColor} h={3}/>
+          <div style={{ height:3, borderRadius:2, background:L.line, overflow:"hidden" }}><div style={{ height:"100%", width:`${prog}%`, background:accentColor, borderRadius:2 }}/></div>
         </div>
-        <div style={{ background:SURF, borderRadius:18, border:`1px solid ${BORDER}`, overflow:"hidden" }}>
+        <div style={{ background:L.card, borderRadius:18, border:`1px solid ${L.line}`, overflow:"hidden", boxShadow:"0 3px 10px -4px rgba(14,35,72,.10)" }}>
           <div style={{ height:3, background:accentColor }}/>
           <div style={{ padding:"22px 22px 0" }}>
             <div style={{ display:"flex", gap:8, alignItems:"center", marginBottom:12 }}>
               <DiffTag diff={getD(q)}/>
-              <span style={{ fontSize:11, color:TXT2 }}>{getT(q)}</span>
+              <span style={{ fontSize:11, color:L.muted }}>{getT(q)}</span>
             </div>
-            <div style={{ fontSize:16, fontWeight:500, color:TXT, lineHeight:1.65, marginBottom:20, letterSpacing:"-0.1px" }}>
+            <div style={{ fontSize:16, fontWeight:500, color:L.ink, lineHeight:1.65, marginBottom:20, letterSpacing:"-0.1px" }}>
               {getQ(q)}
             </div>
           </div>
           <div style={{ padding:"0 22px 22px" }}>
             {getC(q).map(ch => {
               const l = ch[0];
-              let bg=SURF2,bdr=BORDER,col=TXT,fw=400;
+              let bg=L.bg,bdr=L.line,col=L.ink,fw=400;
               if (shown) {
-                if (l===getA(q)) { bg="#022c22"; bdr="#22c55e"; col="#4ade80"; fw=600; }
-                else if (l===sel&&l!==getA(q)) { bg="#2a0a0a"; bdr="#ef4444"; col="#f87171"; }
-              } else if (l===sel) { bg="#1e1b4b"; bdr=accentColor; col="#a5b4fc"; fw=500; }
+                if (l===getA(q)) { bg="#EAF7EE"; bdr="#1EA457"; col="#177A42"; fw=600; }
+                else if (l===sel&&l!==getA(q)) { bg="#FDECEC"; bdr="#E5484D"; col="#C22A2F"; }
+              } else if (l===sel) { bg=`${accentColor}18`; bdr=accentColor; col=accentColor; fw=500; }
               return (
                 <button key={l} onClick={()=>!shown&&setSel(l)}
                   style={{ display:"block", width:"100%", padding:"12px 14px", marginBottom:7, borderRadius:11,
                     border:`1.5px solid ${bdr}`, background:bg, color:col, cursor:shown?"default":"pointer",
-                    textAlign:"left", fontSize:13, fontFamily:sf, fontWeight:fw, lineHeight:1.5,
+                    textAlign:"left", fontSize:13, fontFamily:pf, fontWeight:fw, lineHeight:1.5,
                     transition:"all .12s", boxSizing:"border-box" }}>
                   {ch}{shown&&l===getA(q)?" ✓":""}{shown&&l===sel&&l!==getA(q)?" ✗":""}
                 </button>
@@ -1006,22 +1021,22 @@ function QuizEngine({ rawQuestions, title, quizId, accentColor, onExit, username
             })}
             {!shown ? (
               <button onClick={submit} disabled={!sel}
-                style={{ width:"100%", background:sel?accentColor:"#27272f", color:sel?"#fff":TXT2, border:"none",
+                style={{ width:"100%", background:sel?accentColor:L.line, color:sel?"#fff":L.muted, border:"none",
                   borderRadius:11, padding:"13px", fontSize:13, fontWeight:700, cursor:sel?"pointer":"not-allowed",
-                  fontFamily:sf, transition:"all .2s", marginTop:4 }}>
+                  fontFamily:pf, transition:"all .2s", marginTop:4 }}>
                 Submit Answer
               </button>
             ) : (
               <>
                 <div style={{ padding:"12px 14px", borderRadius:11, marginTop:4, fontSize:13, lineHeight:1.65,
-                  background:ok?"#022c22":"#2a0a0a", borderLeft:`3px solid ${ok?"#22c55e":"#ef4444"}`,
-                  color:ok?"#86efac":"#fca5a5" }}>
+                  background:ok?"#EAF7EE":"#FDECEC", borderLeft:`3px solid ${ok?"#1EA457":"#E5484D"}`,
+                  color:ok?"#177A42":"#C22A2F" }}>
                   <div style={{ fontWeight:700, marginBottom:4 }}>{ok?"Correct.":"Incorrect. Answer: "+getA(q)}</div>
                   {getE(q)}
                 </div>
                 <button onClick={next}
-                  style={{ width:"100%", background:SURF2, color:TXT, border:`1px solid ${BORDER}`, borderRadius:11,
-                    padding:"13px", fontSize:13, fontWeight:600, cursor:"pointer", marginTop:8, fontFamily:sf }}>
+                  style={{ width:"100%", background:L.navy, color:"#fff", border:"none", borderRadius:11,
+                    padding:"13px", fontSize:13, fontWeight:600, cursor:"pointer", marginTop:8, fontFamily:pf }}>
                   {idx+1>=total ? "View Results" : "Next →"}
                 </button>
               </>
