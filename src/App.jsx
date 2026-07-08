@@ -340,12 +340,15 @@ function Mascot({ pose = "idle", size = 92 }) {
   );
 }
 
-function MascotBubble({ children, align = "left" }) {
+function MascotBubble({ children, tailSide = "left" }) {
   return (
-    <div style={{ background: "#fff", border: `1px solid ${L.line}`, borderRadius: 14, padding: "9px 13px",
-      fontSize: 11.5, color: L.ink, lineHeight: 1.5, boxShadow: "0 3px 10px -4px rgba(14,35,72,.14)",
+    <div style={{ background: "#fff", borderRadius: 16, padding: "12px 14px",
+      fontSize: 12, color: L.ink, lineHeight: 1.55, boxShadow: "0 4px 14px -4px rgba(14,35,72,.18)",
       animation: "mraBubbleIn .35s ease", position: "relative", flex: 1, minWidth: 0 }}>
       {children}
+      <div style={{ position: "absolute", top: "50%", [tailSide]: -6, width: 14, height: 14, background: "#fff",
+        transform: "translateY(-50%) rotate(45deg)",
+        boxShadow: tailSide === "right" ? "3px -3px 5px -4px rgba(14,35,72,.15)" : "-3px 3px 5px -4px rgba(14,35,72,.15)" }} />
     </div>
   );
 }
@@ -1085,16 +1088,14 @@ function QuizEngine({ rawQuestions, title, quizId, accentColor, onExit, username
               </button>
             ) : (
               <>
-                <div style={{ display:"flex", flexDirection:"row-reverse", gap:10, alignItems:"center",
+                <div style={{ display:"flex", flexDirection:"row-reverse", gap:14, alignItems:"center",
                   marginTop:6, marginBottom:8 }}>
                   <Mascot pose={ok ? "happy" : "oops"} size={126}/>
-                  <div style={{ flex:1, minWidth:0, padding:"12px 13px", borderRadius:11, fontSize:12, lineHeight:1.55,
-                    background:ok?"#EAF7EE":"#FDECEC", borderRight:`3px solid ${ok?"#1EA457":"#E5484D"}`,
-                    color:ok?"#177A42":"#C22A2F" }}>
-                    <div style={{ fontSize:10.5, fontWeight:600, marginBottom:4, opacity:.8 }}>{feedbackMsg}</div>
-                    <div style={{ fontWeight:700, marginBottom:4 }}>{ok?"Correct.":"Incorrect. Answer: "+getA(q)}</div>
-                    {getE(q)}
-                  </div>
+                  <MascotBubble tailSide="right">
+                    <div style={{ fontSize:10.5, fontWeight:600, marginBottom:4, color:L.muted }}>{feedbackMsg}</div>
+                    <div style={{ fontWeight:700, marginBottom:4, color:ok?"#177A42":"#C22A2F" }}>{ok?"Correct.":"Incorrect. Answer: "+getA(q)}</div>
+                    <div style={{ color:L.ink }}>{getE(q)}</div>
+                  </MascotBubble>
                 </div>
                 <button onClick={next}
                   style={{ width:"100%", background:L.navy, color:"#fff", border:"none", borderRadius:11,
