@@ -1085,15 +1085,16 @@ function QuizEngine({ rawQuestions, title, quizId, accentColor, onExit, username
               </button>
             ) : (
               <>
-                <div style={{ display:"flex", gap:10, alignItems:"center", marginTop:6, marginBottom:8 }}>
-                  <Mascot pose={ok ? "happy" : "oops"} size={84}/>
-                  <MascotBubble>{feedbackMsg}</MascotBubble>
-                </div>
-                <div style={{ padding:"12px 14px", borderRadius:11, fontSize:13, lineHeight:1.65,
-                  background:ok?"#EAF7EE":"#FDECEC", borderLeft:`3px solid ${ok?"#1EA457":"#E5484D"}`,
-                  color:ok?"#177A42":"#C22A2F" }}>
-                  <div style={{ fontWeight:700, marginBottom:4 }}>{ok?"Correct.":"Incorrect. Answer: "+getA(q)}</div>
-                  {getE(q)}
+                <div style={{ display:"flex", flexDirection:"row-reverse", gap:10, alignItems:"center",
+                  marginTop:6, marginBottom:8 }}>
+                  <Mascot pose={ok ? "happy" : "oops"} size={126}/>
+                  <div style={{ flex:1, minWidth:0, padding:"12px 13px", borderRadius:11, fontSize:12, lineHeight:1.55,
+                    background:ok?"#EAF7EE":"#FDECEC", borderRight:`3px solid ${ok?"#1EA457":"#E5484D"}`,
+                    color:ok?"#177A42":"#C22A2F" }}>
+                    <div style={{ fontSize:10.5, fontWeight:600, marginBottom:4, opacity:.8 }}>{feedbackMsg}</div>
+                    <div style={{ fontWeight:700, marginBottom:4 }}>{ok?"Correct.":"Incorrect. Answer: "+getA(q)}</div>
+                    {getE(q)}
+                  </div>
                 </div>
                 <button onClick={next}
                   style={{ width:"100%", background:L.navy, color:"#fff", border:"none", borderRadius:11,
@@ -1231,16 +1232,16 @@ export default function MasterReviewAcademy() {
   // ── HOME ──────────────────────────────────────────────────────
   if (view === "home") return shell("home", (
     <>
-      <div style={{ margin:"0 20px", padding:"20px 14px 0 20px", background:L.cream, borderRadius:22, minHeight:200,
-        display:"flex", alignItems:"flex-end", gap:6, overflow:"hidden" }}>
-        <div style={{ flex:1, minWidth:0, maxWidth:"56%", paddingBottom:20 }}>
+      <div style={{ margin:"0 20px", padding:"20px 0 0 20px", background:L.cream, borderRadius:22, minHeight:230,
+        display:"flex", alignItems:"flex-end", gap:2, overflow:"hidden", position:"relative" }}>
+        <div style={{ flex:1, minWidth:0, maxWidth:"50%", paddingBottom:22 }}>
           <h1 style={{ fontSize:19, fontWeight:600, color:L.ink, lineHeight:1.28 }}>Good {new Date().getHours()<12?"morning":new Date().getHours()<18?"afternoon":"evening"},<br/>{user}!</h1>
           <p style={{ fontSize:11, color:"#8a7f6f", marginTop:10, lineHeight:1.5 }}>{homeMsg}</p>
           <div onClick={()=>setView("library")} style={{ display:"inline-block", marginTop:12, background:L.navy, color:"#fff",
             fontSize:10.5, fontWeight:600, padding:"8px 15px", borderRadius:999, cursor:"pointer" }}>Let's Review →</div>
         </div>
-        <div style={{ flex:"none", marginBottom:-4 }}>
-          <Mascot pose="idle" size={150}/>
+        <div style={{ flex:"none", marginBottom:-6, marginRight:-8 }}>
+          <Mascot pose="idle" size={205}/>
         </div>
       </div>
 
