@@ -262,6 +262,50 @@ function NavIcon({ type, active }) {
   return <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke={c} strokeWidth="1.6"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6" stroke={c} strokeWidth="1.6" strokeLinecap="round"/></svg>;
 }
 
+// Elegant line-icon set replacing the QUIZ_REGISTRY emoji on the light screens.
+const SUBJ_ICON_PATHS = {
+  childado: (c) => <><path d="M9 3a4.5 4.5 0 00-4.2 6.1A4 4 0 006 17h1M15 3a4.5 4.5 0 014.2 6.1A4 4 0 0118 17h-1M9 3c0 3-1.5 4-1.5 7a3 3 0 003 3h3a3 3 0 003-3c0-3-1.5-4-1.5-7M9 3a3 3 0 016 0" stroke={c} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M10.5 21v-2M13.5 21v-2" stroke={c} strokeWidth="1.5" strokeLinecap="round"/></>,
+  assess:   (c) => <><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" stroke={c} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></>,
+  inclusive:(c) => <><circle cx="9" cy="9" r="5.5" stroke={c} strokeWidth="1.5"/><circle cx="15" cy="15" r="5.5" stroke={c} strokeWidth="1.5"/></>,
+  science:  (c) => <><path d="M10 3h4M10.5 3v5.5L6 17a2 2 0 001.8 3h8.4a2 2 0 001.8-3l-4.5-8.5V3" stroke={c} strokeWidth="1.5" strokeLinejoin="round"/><path d="M8.5 15h7" stroke={c} strokeWidth="1.4" strokeLinecap="round"/></>,
+  socsci:   (c) => <><path d="M3 9l9-5 9 5" stroke={c} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M5 9v9M9.5 9v9M14.5 9v9M19 9v9M3 21h18" stroke={c} strokeWidth="1.5" strokeLinecap="round"/></>,
+  contemp:  (c) => <><circle cx="12" cy="12" r="9" stroke={c} strokeWidth="1.5"/><ellipse cx="12" cy="12" rx="4" ry="9" stroke={c} strokeWidth="1.5"/><path d="M3 12h18" stroke={c} strokeWidth="1.5"/></>,
+  artapp:   (c) => <><path d="M12 3a9 9 0 100 18c1.1 0 1.8-.9 1.8-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.7-1.6 1.6-1.6H16a4 4 0 004-4c0-4.4-3.6-8.2-8-8.2z" stroke={c} strokeWidth="1.5" strokeLinejoin="round"/><circle cx="7.5" cy="12" r="1.1" fill={c}/><circle cx="9" cy="8" r="1.1" fill={c}/><circle cx="14" cy="7.5" r="1.1" fill={c}/></>,
+  english:  (c) => <><path d="M12 6.5c-1.5-1-4-1.5-8-1.5v13c4 0 6.5.5 8 1.5 1.5-1 4-1.5 8-1.5V5c-4 0-6.5.5-8 1.5z" stroke={c} strokeWidth="1.5" strokeLinejoin="round"/><path d="M12 6.5V19" stroke={c} strokeWidth="1.5"/></>,
+  filipino: (c) => <><path d="M4 4h13l-2.2 4L17 12H4" stroke={c} strokeWidth="1.5" strokeLinejoin="round"/><path d="M4 4v16" stroke={c} strokeWidth="1.5" strokeLinecap="round"/></>,
+  math:     (c) => <><path d="M12 3l8 15H4l8-15z" stroke={c} strokeWidth="1.5" strokeLinejoin="round"/><path d="M9 15h6" stroke={c} strokeWidth="1.4" strokeLinecap="round"/></>,
+  rizal:    (c) => <><path d="M19 3c-5 0-9 3-11 8-1 2.5-1.5 5-3 7 3-.5 5-1.5 7-3 5-2 8-6 8-11 0-.3 0-.7-1-1z" stroke={c} strokeWidth="1.5" strokeLinejoin="round"/><path d="M12 12L6 18" stroke={c} strokeWidth="1.5" strokeLinecap="round"/></>,
+  ethics2:  (c) => <><path d="M12 3v18M8 21h8" stroke={c} strokeWidth="1.5" strokeLinecap="round"/><path d="M12 6L5 8l3 6.5a3.4 3.4 0 004-.1L12 8zM12 6l7 2-3 6.5a3.4 3.4 0 01-4-.1L12 8z" stroke={c} strokeWidth="1.4" strokeLinejoin="round"/></>,
+};
+function SubjIcon({ subjId, color = "#14213D", size = 20 }) {
+  const draw = SUBJ_ICON_PATHS[subjId];
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none">{draw ? draw(color) : <circle cx="12" cy="12" r="8" stroke={color} strokeWidth="1.6"/>}</svg>;
+}
+function CategoryIcon({ type, color, size = 22 }) {
+  if (type === "prof") return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <rect x="3" y="7" width="18" height="13" rx="2" stroke={color} strokeWidth="1.5"/>
+      <path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2" stroke={color} strokeWidth="1.5"/>
+      <path d="M3 12h18M10.5 12v2h3v-2" stroke={color} strokeWidth="1.5" strokeLinejoin="round"/>
+    </svg>
+  );
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <path d="M12 4L2 9l10 5 8-4v6" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+function TrophyIcon({ color = "#F0BA48", size = 16 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <path d="M7 4h10v5a5 5 0 01-10 0V4z" stroke={color} strokeWidth="1.5" strokeLinejoin="round"/>
+      <path d="M7 5H4a3 3 0 003 3M17 5h3a3 3 0 01-3 3" stroke={color} strokeWidth="1.4" strokeLinecap="round"/>
+      <path d="M12 14v3M9 20h6M10 20v-2.5a1 1 0 011-1h2a1 1 0 011 1V20" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
 function BottomNav({ active, onNav }) {
   return (
     <div style={{ marginTop:"auto", background:L.navyNav, height:72, display:"flex", alignItems:"center",
@@ -1140,14 +1184,14 @@ export default function MasterReviewAcademy() {
       <div style={{ margin:"15px 20px 0", display:"flex", gap:8 }}>
         <div onClick={()=>{setFilterS("all-prof");setView("library");}} style={{ flex:1, minWidth:0, borderRadius:16, padding:"12px 6px 10px",
           textAlign:"center", background:L.greenTint, cursor:"pointer" }}>
-          <div style={{ fontSize:22 }}>📋</div>
+          <CategoryIcon type="prof" color={L.green}/>
           <div style={{ fontSize:10.5, fontWeight:600, color:L.ink, marginTop:6 }}>Professional Education</div>
           <SubjRing pct={avgOf(profSubset)} color={L.green} tint="#d7ead9"/>
           <div style={{ fontSize:8.5, color:L.muted, marginTop:2 }}>{profSubset.length} quizzes</div>
         </div>
         <div onClick={()=>{setFilterS("all-gened");setView("library");}} style={{ flex:1, minWidth:0, borderRadius:16, padding:"12px 6px 10px",
           textAlign:"center", background:L.purpleTint, cursor:"pointer" }}>
-          <div style={{ fontSize:22 }}>🎓</div>
+          <CategoryIcon type="gened" color={L.purple}/>
           <div style={{ fontSize:10.5, fontWeight:600, color:L.ink, marginTop:6 }}>General Education</div>
           <SubjRing pct={avgOf(genSubset)} color={L.purple} tint="#e6d3f2"/>
           <div style={{ fontSize:8.5, color:L.muted, marginTop:2 }}>{genSubset.length} quizzes</div>
@@ -1162,8 +1206,8 @@ export default function MasterReviewAcademy() {
           </div>
           {mostRecent ? (
             <div style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 18px 16px" }}>
-              <div style={{ width:52, height:52, borderRadius:12, background:mostRecent.q.color, flex:"none",
-                display:"flex", alignItems:"center", justifyContent:"center", fontSize:22 }}>{mostRecent.q.icon}</div>
+              <div style={{ width:52, height:52, borderRadius:12, background:`${mostRecent.q.color}22`, flex:"none",
+                display:"flex", alignItems:"center", justifyContent:"center" }}><SubjIcon subjId={mostRecent.q.subjId} color={mostRecent.q.color} size={24}/></div>
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ fontSize:9, color:L.muted }}>{mostRecent.q.category==="gened"?"General Education":"Professional Education"}</div>
                 <div style={{ fontSize:13, fontWeight:700, color:L.ink, margin:"2px 0 6px", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{mostRecent.q.title.split("—")[0].trim()}</div>
@@ -1197,7 +1241,7 @@ export default function MasterReviewAcademy() {
                 <div style={{ height:"100%", width:`${Math.min(100,dailyAnswered/DAILY_GOAL*100)}%`, background:L.blue, borderRadius:4 }}/>
               </div>
               <div style={{ fontSize:11, fontWeight:600, color:L.ink }}>{Math.min(dailyAnswered,DAILY_GOAL)} / {DAILY_GOAL}</div>
-              <div style={{ fontSize:15 }}>🏆</div>
+              <TrophyIcon color={L.gold} size={17}/>
             </div>
           </div>
         </div>
@@ -1255,7 +1299,7 @@ export default function MasterReviewAcademy() {
               <div key={quiz.id} onClick={()=>setActiveQ(quiz.id)} style={{ display:"flex", alignItems:"center", gap:12, padding:14, cursor:"pointer",
                 borderTop: i>0 ? `1px solid ${L.line}` : "none" }}>
                 <div style={{ width:42, height:42, borderRadius:12, flex:"none", background:tint,
-                  display:"flex", alignItems:"center", justifyContent:"center", fontSize:19 }}>{quiz.icon}</div>
+                  display:"flex", alignItems:"center", justifyContent:"center" }}><SubjIcon subjId={quiz.subjId} color={quiz.color} size={20}/></div>
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ fontSize:12.5, fontWeight:600, color:L.ink, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
                     {quiz.title.split("—")[0].trim()}
@@ -1320,13 +1364,15 @@ export default function MasterReviewAcademy() {
       <div style={{ margin:"12px 20px 0" }}>
         <div style={{ background:"#fff", border:`1px solid ${L.line}`, borderRadius:16, padding:"14px 18px" }}>
           <div style={{ fontSize:13.5, fontWeight:600, color:L.ink, marginBottom:12 }}>All Quizzes</div>
-          {[...QUIZ_REGISTRY, {id:"master",title:"Master Board Exam",icon:"🏆",color:L.navy}].map((quiz,i)=>{
+          {[...QUIZ_REGISTRY, {id:"master",title:"Master Board Exam",color:L.navy}].map((quiz,i)=>{
             const data = getData(quiz.id);
             return (
               <div key={quiz.id} style={{ display:"flex", alignItems:"center", gap:10, padding:"9px 0",
                 borderTop: i>0 ? `1px solid ${L.line}` : "none" }}>
                 <div style={{ width:30, height:30, borderRadius:9, background:`${quiz.color}22`, display:"flex",
-                  alignItems:"center", justifyContent:"center", fontSize:13, flex:"none" }}>{quiz.icon}</div>
+                  alignItems:"center", justifyContent:"center", flex:"none" }}>
+                  {quiz.id==="master" ? <TrophyIcon color={L.navy} size={16}/> : <SubjIcon subjId={quiz.subjId} color={quiz.color} size={16}/>}
+                </div>
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ fontSize:11, fontWeight:600, color:L.ink, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{quiz.title}</div>
                   <div style={{ height:3, borderRadius:2, background:L.line, marginTop:5, overflow:"hidden" }}><div style={{ height:"100%", width:`${data?.score||0}%`, background:quiz.color, borderRadius:2 }}/></div>
@@ -1347,7 +1393,8 @@ export default function MasterReviewAcademy() {
             QUIZ_REGISTRY.filter(q=>!getData(q.id)||(getData(q.id)?.score||0)<80).map((quiz,i)=>(
               <div key={quiz.id} style={{ display:"flex", alignItems:"center", gap:10, padding:"9px 0",
                 borderTop: i>0 ? `1px solid ${L.line}` : "none" }}>
-                <div style={{ fontSize:16 }}>{quiz.icon}</div>
+                <div style={{ width:28, height:28, borderRadius:8, background:`${quiz.color}22`, display:"flex",
+                  alignItems:"center", justifyContent:"center", flex:"none" }}><SubjIcon subjId={quiz.subjId} color={quiz.color} size={15}/></div>
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ fontSize:11, fontWeight:600, color:L.ink }}>{quiz.title}</div>
                   <div style={{ fontSize:9.5, color:L.muted, marginTop:2 }}>{getData(quiz.id)?`Score: ${getData(quiz.id).score}% → Target: 80%+`:"Not yet attempted"}</div>
@@ -1358,7 +1405,7 @@ export default function MasterReviewAcademy() {
             ))
           ) : (
             <div style={{ textAlign:"center", padding:"14px 0" }}>
-              <div style={{ fontSize:22, marginBottom:6 }}>🏆</div>
+              <div style={{ display:"flex", justifyContent:"center", marginBottom:6 }}><TrophyIcon color={L.gold} size={28}/></div>
               <div style={{ fontSize:13, fontWeight:700, color:L.green }}>All quizzes above 80%!</div>
               <div style={{ fontSize:11, color:L.muted, marginTop:4 }}>Ready for the Master Exam.</div>
             </div>
