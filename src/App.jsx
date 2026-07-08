@@ -322,7 +322,7 @@ const MASCOT_MSGS = {
 };
 function pickMsg(pose) { const arr = MASCOT_MSGS[pose] || MASCOT_MSGS.idle; return arr[Math.floor(Math.random() * arr.length)]; }
 
-const MASCOT_ASPECT = 518 / 600; // professor.png natural width/height
+const MASCOT_ASPECT = 620 / 700; // professor.png natural width/height
 function Mascot({ pose = "idle", size = 92 }) {
   const bodyAnim = pose === "happy" ? "mraMascotPop .6s ease" : pose === "oops" ? "mraMascotShake .5s ease" : "mraMascotBob 2.6s ease-in-out infinite";
   const height = size / MASCOT_ASPECT;
@@ -1085,8 +1085,8 @@ function QuizEngine({ rawQuestions, title, quizId, accentColor, onExit, username
               </button>
             ) : (
               <>
-                <div style={{ display:"flex", gap:10, alignItems:"flex-start", marginTop:6, marginBottom:8 }}>
-                  <Mascot pose={ok ? "happy" : "oops"} size={60}/>
+                <div style={{ display:"flex", gap:10, alignItems:"center", marginTop:6, marginBottom:8 }}>
+                  <Mascot pose={ok ? "happy" : "oops"} size={84}/>
                   <MascotBubble>{feedbackMsg}</MascotBubble>
                 </div>
                 <div style={{ padding:"12px 14px", borderRadius:11, fontSize:13, lineHeight:1.65,
@@ -1231,15 +1231,17 @@ export default function MasterReviewAcademy() {
   // ── HOME ──────────────────────────────────────────────────────
   if (view === "home") return shell("home", (
     <>
-      <div style={{ margin:"0 20px", padding:20, background:L.cream, borderRadius:22, minHeight:150,
-        display:"flex", alignItems:"center", gap:10 }}>
-        <div style={{ flex:1, minWidth:0 }}>
+      <div style={{ margin:"0 20px", padding:"20px 14px 0 20px", background:L.cream, borderRadius:22, minHeight:200,
+        display:"flex", alignItems:"flex-end", gap:6, overflow:"hidden" }}>
+        <div style={{ flex:1, minWidth:0, maxWidth:"56%", paddingBottom:20 }}>
           <h1 style={{ fontSize:19, fontWeight:600, color:L.ink, lineHeight:1.28 }}>Good {new Date().getHours()<12?"morning":new Date().getHours()<18?"afternoon":"evening"},<br/>{user}!</h1>
           <p style={{ fontSize:11, color:"#8a7f6f", marginTop:10, lineHeight:1.5 }}>{homeMsg}</p>
           <div onClick={()=>setView("library")} style={{ display:"inline-block", marginTop:12, background:L.navy, color:"#fff",
             fontSize:10.5, fontWeight:600, padding:"8px 15px", borderRadius:999, cursor:"pointer" }}>Let's Review →</div>
         </div>
-        <Mascot pose="idle" size={78}/>
+        <div style={{ flex:"none", marginBottom:-4 }}>
+          <Mascot pose="idle" size={150}/>
+        </div>
       </div>
 
       <div style={{ margin:"15px 20px 0" }}>
