@@ -306,6 +306,83 @@ function TrophyIcon({ color = "#F0BA48", size = 16 }) {
   );
 }
 
+// Original animated mascot — not a copy of any illustrated character, just a
+// simple geometric grad-cap companion built from the app's own palette.
+const MASCOT_MSGS = {
+  idle: [
+    "Ready to level up today?", "Let's ace a few questions!", "Your future classroom is waiting!",
+    "One quiz a day keeps doubts away.", "You've got this, future teacher!", "Small steps, big mastery.",
+  ],
+  happy: [
+    "Nice work!", "You nailed it!", "Excellent!", "That's the spirit!", "Keep it up!", "Sharp thinking!",
+  ],
+  oops: [
+    "Almost — let's learn from this one:", "No worries, here's why:", "Let's break it down together:", "Close! Here's the idea:",
+  ],
+};
+function pickMsg(pose) { const arr = MASCOT_MSGS[pose] || MASCOT_MSGS.idle; return arr[Math.floor(Math.random() * arr.length)]; }
+
+function Mascot({ pose = "idle", size = 92 }) {
+  const bodyAnim = pose === "happy" ? "mraMascotPop .6s ease" : pose === "oops" ? "mraMascotShake .5s ease" : "mraMascotBob 2.6s ease-in-out infinite";
+  const armAnim  = pose === "idle" ? "mraMascotWave 2.2s ease-in-out infinite" : "none";
+  return (
+    <div style={{ width: size, height: size * 1.08, position: "relative", flex: "none" }}>
+      <svg width={size} height={size * 1.08} viewBox="0 0 120 130" style={{ animation: bodyAnim, transformOrigin: "60px 78px" }}>
+        {/* left arm */}
+        <path d="M32 84c-9 2-15 9-16 18" stroke={L.navy} strokeWidth="7" strokeLinecap="round" fill="none" />
+        {/* right arm (waves on idle) */}
+        <path d="M88 84c9 2 15 9 16 18" stroke={L.navy} strokeWidth="7" strokeLinecap="round" fill="none"
+          style={{ animation: armAnim, transformOrigin: "88px 84px" }} />
+        {/* body */}
+        <ellipse cx="60" cy="80" rx="35" ry="38" fill={L.cream} stroke={L.navy} strokeWidth="2.5" />
+        {/* cap */}
+        <path d="M60 18L92 30L60 42L28 30L60 18Z" fill={L.navy} />
+        <path d="M40 33v10c0 5 9 9 20 9s20-4 20-9V33" fill="none" stroke={L.navy} strokeWidth="2.5" />
+        <path d="M88 31v11" stroke={L.gold} strokeWidth="2" />
+        <circle cx="88" cy="44" r="2.6" fill={L.gold} />
+        {/* face */}
+        {pose === "happy" ? (
+          <>
+            <path d="M44 72q4-6 8 0" stroke={L.navy} strokeWidth="3" strokeLinecap="round" fill="none" />
+            <path d="M68 72q4-6 8 0" stroke={L.navy} strokeWidth="3" strokeLinecap="round" fill="none" />
+            <circle cx="42" cy="86" r="5" fill="#F5A9B8" opacity="0.6" />
+            <circle cx="78" cy="86" r="5" fill="#F5A9B8" opacity="0.6" />
+            <path d="M46 88q14 14 28 0" stroke={L.navy} strokeWidth="3.5" strokeLinecap="round" fill="none" />
+          </>
+        ) : pose === "oops" ? (
+          <>
+            <path d="M42 70q4 4 8 0" stroke={L.navy} strokeWidth="2.5" strokeLinecap="round" fill="none" />
+            <path d="M70 70q4 4 8 0" stroke={L.navy} strokeWidth="2.5" strokeLinecap="round" fill="none" />
+            <circle cx="46" cy="78" r="4" fill={L.navy} />
+            <circle cx="74" cy="78" r="4" fill={L.navy} />
+            <ellipse cx="60" cy="92" rx="5" ry="4" fill="none" stroke={L.navy} strokeWidth="3" />
+          </>
+        ) : (
+          <>
+            <circle cx="46" cy="76" r="4.5" fill={L.navy} />
+            <circle cx="74" cy="76" r="4.5" fill={L.navy} />
+            <path d="M47 90q13 9 26 0" stroke={L.navy} strokeWidth="3" strokeLinecap="round" fill="none" />
+          </>
+        )}
+      </svg>
+      {pose === "happy" && [0, 1, 2].map(i => (
+        <span key={i} style={{ position: "absolute", left: `${20 + i * 30}%`, top: "6%", fontSize: size * 0.16,
+          animation: `mraMascotSparkle .9s ease ${i * 0.15}s infinite` }}>✦</span>
+      ))}
+    </div>
+  );
+}
+
+function MascotBubble({ children, align = "left" }) {
+  return (
+    <div style={{ background: "#fff", border: `1px solid ${L.line}`, borderRadius: 14, padding: "9px 13px",
+      fontSize: 11.5, color: L.ink, lineHeight: 1.5, boxShadow: "0 3px 10px -4px rgba(14,35,72,.14)",
+      animation: "mraBubbleIn .35s ease", position: "relative", flex: 1, minWidth: 0 }}>
+      {children}
+    </div>
+  );
+}
+
 function BottomNav({ active, onNav }) {
   return (
     <div style={{ marginTop:"auto", background:L.navyNav, height:72, display:"flex", alignItems:"center",
@@ -834,6 +911,7 @@ function QuizEngine({ rawQuestions, title, quizId, accentColor, onExit, username
   const [missed, setMissed]  = useState(() => validSaved ? saved.missed : []);
   const [phase,  setPhase]   = useState("quiz");
   const [ckpt,   setCkpt]    = useState(null);
+  const [feedbackMsg, setFeedbackMsg] = useState("");
   const ref = useRef(null);
 
   const total    = questions.length;
@@ -854,6 +932,7 @@ function QuizEngine({ rawQuestions, title, quizId, accentColor, onExit, username
     const ok = sel === getA(q);
     if (ok) setCorrect(c => c + 1);
     else { setWrong(c => c + 1); setMissed(m => [...m, { ...q, ya: sel }]); }
+    setFeedbackMsg(pickMsg(ok ? "happy" : "oops"));
     setShown(true);
     bumpDailyAnswered(storage);
   }
@@ -1039,7 +1118,11 @@ function QuizEngine({ rawQuestions, title, quizId, accentColor, onExit, username
               </button>
             ) : (
               <>
-                <div style={{ padding:"12px 14px", borderRadius:11, marginTop:4, fontSize:13, lineHeight:1.65,
+                <div style={{ display:"flex", gap:10, alignItems:"flex-start", marginTop:6, marginBottom:8 }}>
+                  <Mascot pose={ok ? "happy" : "oops"} size={60}/>
+                  <MascotBubble>{feedbackMsg}</MascotBubble>
+                </div>
+                <div style={{ padding:"12px 14px", borderRadius:11, fontSize:13, lineHeight:1.65,
                   background:ok?"#EAF7EE":"#FDECEC", borderLeft:`3px solid ${ok?"#1EA457":"#E5484D"}`,
                   color:ok?"#177A42":"#C22A2F" }}>
                   <div style={{ fontWeight:700, marginBottom:4 }}>{ok?"Correct.":"Incorrect. Answer: "+getA(q)}</div>
@@ -1076,6 +1159,7 @@ export default function MasterReviewAcademy() {
   const [search,   setSearch]   = useState("");
   const [master350,setMaster350]= useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [homeMsg] = useState(() => pickMsg("idle"));
 
   // Save session to localStorage whenever it changes
   useEffect(() => {
@@ -1180,9 +1264,15 @@ export default function MasterReviewAcademy() {
   // ── HOME ──────────────────────────────────────────────────────
   if (view === "home") return shell("home", (
     <>
-      <div style={{ margin:"0 20px", padding:20, background:L.cream, borderRadius:22, minHeight:120 }}>
-        <h1 style={{ fontSize:19, fontWeight:600, color:L.ink, lineHeight:1.28, maxWidth:"70%" }}>Good {new Date().getHours()<12?"morning":new Date().getHours()<18?"afternoon":"evening"},<br/>{user}!</h1>
-        <p style={{ fontSize:11, color:"#8a7f6f", marginTop:10, maxWidth:"80%", lineHeight:1.5 }}>Every question you answer brings you closer to your goal.</p>
+      <div style={{ margin:"0 20px", padding:20, background:L.cream, borderRadius:22, minHeight:150,
+        display:"flex", alignItems:"center", gap:10 }}>
+        <div style={{ flex:1, minWidth:0 }}>
+          <h1 style={{ fontSize:19, fontWeight:600, color:L.ink, lineHeight:1.28 }}>Good {new Date().getHours()<12?"morning":new Date().getHours()<18?"afternoon":"evening"},<br/>{user}!</h1>
+          <p style={{ fontSize:11, color:"#8a7f6f", marginTop:10, lineHeight:1.5 }}>{homeMsg}</p>
+          <div onClick={()=>setView("library")} style={{ display:"inline-block", marginTop:12, background:L.navy, color:"#fff",
+            fontSize:10.5, fontWeight:600, padding:"8px 15px", borderRadius:999, cursor:"pointer" }}>Let's Review →</div>
+        </div>
+        <Mascot pose="idle" size={78}/>
       </div>
 
       <div style={{ margin:"15px 20px 0" }}>
