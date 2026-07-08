@@ -324,6 +324,19 @@ function TrophyIcon({ color = "#F0BA48", size = 16 }) {
     </svg>
   );
 }
+function DonutChart({ pct = 0, color = "#0E2348", size = 128, stroke = 14, track = "#EEF1F7" }) {
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const off = c * (1 - Math.min(100, Math.max(0, pct)) / 100);
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: "rotate(-90deg)" }}>
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={track} strokeWidth={stroke}/>
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={stroke}
+        strokeDasharray={c} strokeDashoffset={off} strokeLinecap="round"
+        style={{ transition: "stroke-dashoffset .6s ease" }}/>
+    </svg>
+  );
+}
 
 // Original animated mascot — not a copy of any illustrated character, just a
 // simple geometric grad-cap companion built from the app's own palette.
@@ -401,41 +414,58 @@ function BottomNav({ active, onNav }) {
   );
 }
 
-function Sidebar({ active, onNav, user, isAdmin, onAdmin, onLogout }) {
+function Sidebar({ active, onNav, user, isAdmin, onAdmin, onLogout, streak, mastery }) {
   return (
-    <div style={{ width: 232, flex: "none", background: L.navyNav, minHeight: "100vh",
-      display: "flex", flexDirection: "column", padding: "24px 0" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 9, padding: "0 22px 26px" }}>
-        <svg width="28" height="24" viewBox="0 0 26 22" style={{ flex: "none" }}><path d="M13 0L26 5.5L13 11L0 5.5L13 0Z" fill={L.gold}/><path d="M6 8V14C6 14 9 17 13 17C17 17 20 14 20 14V8L13 11L6 8Z" fill={L.gold}/></svg>
-        <div style={{ lineHeight: 1.15 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>MASTER REVIEW</div>
-          <div style={{ fontSize: 9, color: "#8a93a8" }}>ACADEMY</div>
+    <div style={{ width: 248, flex: "none", background: L.navyNav, minHeight: "100vh",
+      display: "flex", flexDirection: "column", padding: "26px 0",
+      backgroundImage: "radial-gradient(circle at 15% -10%, rgba(240,186,72,.14), transparent 45%)" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 22px 28px" }}>
+        <svg width="30" height="26" viewBox="0 0 26 22" style={{ flex: "none" }}><path d="M13 0L26 5.5L13 11L0 5.5L13 0Z" fill={L.gold}/><path d="M6 8V14C6 14 9 17 13 17C17 17 20 14 20 14V8L13 11L6 8Z" fill={L.gold}/></svg>
+        <div style={{ lineHeight: 1.2 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", letterSpacing: ".2px" }}>MASTER REVIEW</div>
+          <div style={{ fontSize: 9.5, color: "#8a93a8", letterSpacing: "1px" }}>ACADEMY</div>
         </div>
       </div>
+
+      <div style={{ margin: "0 18px 24px", background: "rgba(255,255,255,.06)", borderRadius: 16,
+        padding: "14px 16px", display: "flex", alignItems: "center", gap: 0,
+        border: "1px solid rgba(255,255,255,.08)" }}>
+        <div style={{ flex: 1, textAlign: "center" }}>
+          <div style={{ fontSize: 19, fontWeight: 800, color: L.gold }}>{streak}</div>
+          <div style={{ fontSize: 8.5, color: "#a9b4c9", marginTop: 2, letterSpacing: ".3px" }}>DAY STREAK</div>
+        </div>
+        <div style={{ width: 1, height: 30, background: "rgba(255,255,255,.12)" }}/>
+        <div style={{ flex: 1, textAlign: "center" }}>
+          <div style={{ fontSize: 19, fontWeight: 800, color: "#fff" }}>{mastery}%</div>
+          <div style={{ fontSize: 8.5, color: "#a9b4c9", marginTop: 2, letterSpacing: ".3px" }}>MASTERY</div>
+        </div>
+      </div>
+
       <div style={{ flex: 1 }}>
         {LNAV_ITEMS.map(n => (
-          <div key={n.id} onClick={()=>onNav(n.id)} style={{ display:"flex", alignItems:"center", gap:12,
-            padding:"12px 22px", cursor:"pointer", color: active===n.id ? L.gold : "#c3c9d6",
+          <div key={n.id} onClick={()=>onNav(n.id)} className="mra-hover-navitem"
+            style={{ display:"flex", alignItems:"center", gap:12,
+            padding:"13px 22px", cursor:"pointer", color: active===n.id ? L.gold : "#c3c9d6",
             background: active===n.id ? "rgba(240,186,72,.1)" : "transparent",
             borderLeft: active===n.id ? `3px solid ${L.gold}` : "3px solid transparent", fontFamily:pf }}>
             <NavIcon type={n.icon} active={active===n.id}/>
-            <span style={{ fontSize:12.5, fontWeight:600 }}>{n.label}</span>
+            <span style={{ fontSize:13, fontWeight:600 }}>{n.label}</span>
           </div>
         ))}
         {isAdmin && (
-          <div onClick={onAdmin} style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 22px",
+          <div onClick={onAdmin} className="mra-hover-navitem" style={{ display:"flex", alignItems:"center", gap:12, padding:"13px 22px",
             cursor:"pointer", color:"#7fb3e8", fontFamily:pf }}>
-            <span style={{ fontSize:12.5, fontWeight:600 }}>Admin Panel</span>
+            <span style={{ fontSize:13, fontWeight:600 }}>Admin Panel</span>
           </div>
         )}
       </div>
       <div style={{ padding:"14px 22px 0", borderTop:"1px solid rgba(255,255,255,.1)" }}>
         <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:12 }}>
-          <div style={{ width:34, height:34, borderRadius:"50%", background:L.gold, color:L.navy, fontWeight:700,
-            fontSize:12.5, display:"flex", alignItems:"center", justifyContent:"center", flex:"none" }}>
+          <div style={{ width:36, height:36, borderRadius:"50%", background:L.gold, color:L.navy, fontWeight:700,
+            fontSize:13, display:"flex", alignItems:"center", justifyContent:"center", flex:"none" }}>
             {(user||"?").slice(0,2).toUpperCase()}
           </div>
-          <span style={{ fontSize:12, fontWeight:600, color:"#fff", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{user}</span>
+          <span style={{ fontSize:12.5, fontWeight:600, color:"#fff", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{user}</span>
         </div>
         <div onClick={onLogout} style={{ fontSize:11.5, fontWeight:600, color:"#E5484D", cursor:"pointer" }}>Log Out</div>
       </div>
@@ -1296,7 +1326,7 @@ export default function MasterReviewAcademy() {
     if (viewport === "desktop") return (
       <div style={{ background:L.bg, minHeight:"100vh", display:"flex", fontFamily:pf }}>
         <Sidebar active={active} onNav={nav} user={user} isAdmin={isAdmin}
-          onAdmin={()=>setView("admin")} onLogout={handleLogout}/>
+          onAdmin={()=>setView("admin")} onLogout={handleLogout} streak={streak} mastery={totalMastery()}/>
         <div style={{ flex:1, minHeight:"100vh", display:"flex", justifyContent:"center" }}>
           <div style={{ width:"100%", maxWidth:900, display:"flex", flexDirection:"column" }}>
             <div style={{ height:60, padding:"0 8px 0 28px", display:"flex", alignItems:"center", justifyContent:"flex-end" }}>
@@ -1334,111 +1364,159 @@ export default function MasterReviewAcademy() {
   );
 
   // ── HOME ──────────────────────────────────────────────────────
-  if (view === "home") return shell("home", (
-    <>
-      <div style={{ margin:"0 20px", padding:"20px 0 0 20px", background:L.cream, borderRadius:22, minHeight:230,
-        display:"flex", alignItems:"flex-end", gap:2, overflow:"hidden", position:"relative" }}>
-        <div style={{ flex:1, minWidth:0, maxWidth:"50%", paddingBottom:22 }}>
-          <h1 style={{ fontSize:19, fontWeight:600, color:L.ink, lineHeight:1.28 }}>Good {new Date().getHours()<12?"morning":new Date().getHours()<18?"afternoon":"evening"},<br/>{user}!</h1>
-          <p style={{ fontSize:11, color:"#8a7f6f", marginTop:10, lineHeight:1.5 }}>{homeMsg}</p>
-          <div onClick={()=>setView("library")} style={{ display:"inline-block", marginTop:12, background:L.navy, color:"#fff",
-            fontSize:10.5, fontWeight:600, padding:"8px 15px", borderRadius:999, cursor:"pointer" }}>Let's Review →</div>
+  if (view === "home") {
+    const wide = viewport !== "phone";
+    const roomy = viewport === "desktop";
+    const gap = wide ? 20 : 20;
+    const pad = wide ? "0 28px" : "0 20px";
+
+    const greeting = (
+      <div className="mra-hover-lift" style={{ padding: wide ? "28px 0 0 32px" : "20px 0 0 20px", background:L.cream, borderRadius:22,
+        minHeight: wide ? 270 : 230, display:"flex", alignItems:"flex-end", gap:2, overflow:"hidden", position:"relative" }}>
+        <div style={{ flex:1, minWidth:0, maxWidth: roomy ? "62%" : wide ? "58%" : "50%", paddingBottom: wide ? 30 : 22 }}>
+          <h1 style={{ fontSize: wide ? 28 : 19, fontWeight:600, color:L.ink, lineHeight:1.28 }}>Good {new Date().getHours()<12?"morning":new Date().getHours()<18?"afternoon":"evening"},<br/>{user}!</h1>
+          <p style={{ fontSize: wide ? 14 : 11, color:"#8a7f6f", marginTop:10, lineHeight:1.5 }}>{homeMsg}</p>
+          <div onClick={()=>setView("library")} className="mra-hover-btn" style={{ display:"inline-block", marginTop: wide?16:12, background:L.navy, color:"#fff",
+            fontSize: wide ? 13 : 10.5, fontWeight:600, padding: wide ? "11px 22px" : "8px 15px", borderRadius:999, cursor:"pointer", whiteSpace:"nowrap" }}>Let's Review →</div>
         </div>
-        <div style={{ flex:"none", marginBottom:-6, marginRight:-8 }}>
-          <Mascot pose="idle" size={205}/>
+        <div style={{ flex:"none", marginBottom:-6, marginRight: wide ? -4 : -8 }}>
+          <Mascot pose="idle" size={roomy ? 260 : wide ? 200 : 205}/>
         </div>
       </div>
+    );
 
-      <div style={{ margin:"15px 20px 0" }}>
-        <div style={{ background:L.navy, borderRadius:22, padding:20, color:"#fff" }}>
-          <div style={{ fontSize:14.5, fontWeight:600, marginBottom:16 }}>Overall Progress</div>
-          <div style={{ display:"flex", alignItems:"center", gap:18 }}>
-            <div style={{ width:112, height:112, borderRadius:"50%", flex:"none",
-              background:`conic-gradient(${L.gold} 0deg ${totalMastery()*3.6}deg, rgba(255,255,255,.14) ${totalMastery()*3.6}deg 360deg)`,
-              display:"flex", alignItems:"center", justifyContent:"center", position:"relative" }}>
-              <div style={{ position:"absolute", inset:12, borderRadius:"50%", background:L.navy }}/>
-              <div style={{ position:"relative", textAlign:"center" }}>
-                <div style={{ fontSize:22, fontWeight:700 }}>{totalMastery()}%</div>
-                <div style={{ fontSize:9, color:"#c9d2e2", marginTop:1 }}>Mastery</div>
-              </div>
+    const progressCard = (
+      <div className="mra-hover-lift" style={{ background:L.navy, borderRadius:22, padding: wide ? 26 : 20, color:"#fff" }}>
+        <div style={{ fontSize: wide ? 17 : 14.5, fontWeight:600, marginBottom: wide ? 20 : 16 }}>Overall Progress</div>
+        <div style={{ display:"flex", alignItems:"center", gap: wide ? 26 : 18 }}>
+          <div style={{ width: wide ? 132 : 112, height: wide ? 132 : 112, borderRadius:"50%", flex:"none",
+            background:`conic-gradient(${L.gold} 0deg ${totalMastery()*3.6}deg, rgba(255,255,255,.14) ${totalMastery()*3.6}deg 360deg)`,
+            display:"flex", alignItems:"center", justifyContent:"center", position:"relative" }}>
+            <div style={{ position:"absolute", inset: wide?14:12, borderRadius:"50%", background:L.navy }}/>
+            <div style={{ position:"relative", textAlign:"center" }}>
+              <div style={{ fontSize: wide ? 26 : 22, fontWeight:700 }}>{totalMastery()}%</div>
+              <div style={{ fontSize: wide ? 10.5 : 9, color:"#c9d2e2", marginTop:1 }}>Mastery</div>
             </div>
-            <div style={{ flex:1, display:"flex", flexDirection:"column", gap:9, minWidth:0 }}>
-              <div><div style={{ fontSize:10, color:"#a9b4c9" }}>Correct Answer</div><div style={{ fontSize:15, fontWeight:600, marginTop:1 }}>{correctAnswers.toLocaleString()}</div></div>
-              <div><div style={{ fontSize:10, color:"#a9b4c9" }}>Questions Answered</div><div style={{ fontSize:15, fontWeight:600, marginTop:1 }}>{questionsAnswered.toLocaleString()}</div></div>
-              <div><div style={{ fontSize:10, color:"#a9b4c9" }}>Remaining</div><div style={{ fontSize:15, fontWeight:600, marginTop:1 }}>{remainingQuestions.toLocaleString()}</div></div>
-            </div>
+          </div>
+          <div style={{ flex:1, display:"flex", flexDirection: roomy ? "row" : "column", gap: roomy ? 20 : 9, minWidth:0 }}>
+            <div style={{flex: roomy?1:"none", minWidth:0}}><div style={{ fontSize: wide?11:10, color:"#a9b4c9" }}>Correct Answer</div><div style={{ fontSize: wide?19:15, fontWeight:600, marginTop:1 }}>{correctAnswers.toLocaleString()}</div></div>
+            <div style={{flex: roomy?1:"none", minWidth:0}}><div style={{ fontSize: wide?11:10, color:"#a9b4c9" }}>Questions Answered</div><div style={{ fontSize: wide?19:15, fontWeight:600, marginTop:1 }}>{questionsAnswered.toLocaleString()}</div></div>
+            <div style={{flex: roomy?1:"none", minWidth:0}}><div style={{ fontSize: wide?11:10, color:"#a9b4c9" }}>Remaining</div><div style={{ fontSize: wide?19:15, fontWeight:600, marginTop:1 }}>{remainingQuestions.toLocaleString()}</div></div>
           </div>
         </div>
       </div>
+    );
 
-      <div style={{ margin:"15px 20px 0", display:"flex", gap:8 }}>
-        <div onClick={()=>{setFilterS("all-prof");setView("library");}} style={{ flex:1, minWidth:0, borderRadius:16, padding:"12px 6px 10px",
+    const subjCards = (
+      <div style={{ display:"flex", gap: wide ? 16 : 8 }}>
+        <div onClick={()=>{setFilterS("all-prof");setView("library");}} className="mra-hover-lift" style={{ flex:1, minWidth:0, borderRadius:16, padding: wide ? "20px 10px 18px" : "12px 6px 10px",
           textAlign:"center", background:L.greenTint, cursor:"pointer" }}>
-          <CategoryIcon type="prof" color={L.green}/>
-          <div style={{ fontSize:10.5, fontWeight:600, color:L.ink, marginTop:6 }}>Professional Education</div>
+          <CategoryIcon type="prof" color={L.green} size={wide?30:22}/>
+          <div style={{ fontSize: wide?13:10.5, fontWeight:600, color:L.ink, marginTop: wide?10:6 }}>Professional Education</div>
           <SubjRing pct={avgOf(profSubset)} color={L.green} tint="#d7ead9"/>
-          <div style={{ fontSize:8.5, color:L.muted, marginTop:2 }}>{profSubset.length} quizzes</div>
+          <div style={{ fontSize: wide?10:8.5, color:L.muted, marginTop:2 }}>{profSubset.length} quizzes</div>
         </div>
-        <div onClick={()=>{setFilterS("all-gened");setView("library");}} style={{ flex:1, minWidth:0, borderRadius:16, padding:"12px 6px 10px",
+        <div onClick={()=>{setFilterS("all-gened");setView("library");}} className="mra-hover-lift" style={{ flex:1, minWidth:0, borderRadius:16, padding: wide ? "20px 10px 18px" : "12px 6px 10px",
           textAlign:"center", background:L.purpleTint, cursor:"pointer" }}>
-          <CategoryIcon type="gened" color={L.purple}/>
-          <div style={{ fontSize:10.5, fontWeight:600, color:L.ink, marginTop:6 }}>General Education</div>
+          <CategoryIcon type="gened" color={L.purple} size={wide?30:22}/>
+          <div style={{ fontSize: wide?13:10.5, fontWeight:600, color:L.ink, marginTop: wide?10:6 }}>General Education</div>
           <SubjRing pct={avgOf(genSubset)} color={L.purple} tint="#e6d3f2"/>
-          <div style={{ fontSize:8.5, color:L.muted, marginTop:2 }}>{genSubset.length} quizzes</div>
+          <div style={{ fontSize: wide?10:8.5, color:L.muted, marginTop:2 }}>{genSubset.length} quizzes</div>
         </div>
       </div>
+    );
 
-      <div style={{ margin:"15px 20px 0" }}>
-        <div style={{ background:L.card, borderRadius:22, boxShadow:"0 3px 10px -4px rgba(14,35,72,.10)", border:`1px solid ${L.line}` }}>
-          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 18px 0" }}>
-            <div style={{ fontSize:13.5, fontWeight:600, color:L.ink }}>Continue Studying</div>
-            <div onClick={()=>setView("library")} style={{ fontSize:10.5, fontWeight:600, color:L.blue, cursor:"pointer" }}>View All</div>
-          </div>
-          {mostRecent ? (
-            <div style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 18px 16px" }}>
-              <div style={{ width:52, height:52, borderRadius:12, background:`${mostRecent.q.color}22`, flex:"none",
-                display:"flex", alignItems:"center", justifyContent:"center" }}><SubjIcon subjId={mostRecent.q.subjId} color={mostRecent.q.color} size={24}/></div>
-              <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ fontSize:9, color:L.muted }}>{mostRecent.q.category==="gened"?"General Education":"Professional Education"}</div>
-                <div style={{ fontSize:13, fontWeight:700, color:L.ink, margin:"2px 0 6px", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{mostRecent.q.title.split("—")[0].trim()}</div>
-                <div style={{ height:5, borderRadius:3, background:L.line, overflow:"hidden" }}>
-                  <div style={{ height:"100%", width:`${mostRecent.data.score}%`, background:mostRecent.q.color, borderRadius:3 }}/>
-                </div>
-                <div style={{ fontSize:9, color:L.muted, marginTop:4 }}>Last session: {mostRecent.data.score}%</div>
-              </div>
-              <div onClick={()=>setActiveQ(mostRecent.q.id)} style={{ flex:"none", background:L.navy, color:"#fff", fontSize:10.5,
-                fontWeight:600, padding:"8px 14px", borderRadius:999, cursor:"pointer" }}>Continue</div>
-            </div>
-          ) : (
-            <div style={{ padding:"12px 18px 18px" }}>
-              <div style={{ fontSize:12, color:L.muted, marginBottom:10 }}>You haven't started a quiz yet.</div>
-              <div onClick={()=>setView("library")} style={{ background:L.navy, color:"#fff", fontSize:11, fontWeight:600,
-                padding:"9px 16px", borderRadius:999, display:"inline-block", cursor:"pointer" }}>Browse Library</div>
-            </div>
-          )}
+    const continueCard = (
+      <div className="mra-hover-lift" style={{ background:L.card, borderRadius:22, boxShadow:"0 3px 10px -4px rgba(14,35,72,.10)", border:`1px solid ${L.line}` }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding: wide ? "18px 22px 0" : "14px 18px 0" }}>
+          <div style={{ fontSize: wide?15:13.5, fontWeight:600, color:L.ink }}>Continue Studying</div>
+          <div onClick={()=>setView("library")} style={{ fontSize: wide?11.5:10.5, fontWeight:600, color:L.blue, cursor:"pointer" }}>View All</div>
         </div>
+        {mostRecent ? (
+          <div style={{ display:"flex", alignItems:"center", gap: wide?16:12, padding: wide ? "16px 22px 20px" : "12px 18px 16px" }}>
+            <div style={{ width: wide?64:52, height: wide?64:52, borderRadius:12, background:`${mostRecent.q.color}22`, flex:"none",
+              display:"flex", alignItems:"center", justifyContent:"center" }}><SubjIcon subjId={mostRecent.q.subjId} color={mostRecent.q.color} size={wide?28:24}/></div>
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ fontSize: wide?10:9, color:L.muted }}>{mostRecent.q.category==="gened"?"General Education":"Professional Education"}</div>
+              <div style={{ fontSize: wide?15:13, fontWeight:700, color:L.ink, margin:"2px 0 6px", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{mostRecent.q.title.split("—")[0].trim()}</div>
+              <div style={{ height:5, borderRadius:3, background:L.line, overflow:"hidden" }}>
+                <div style={{ height:"100%", width:`${mostRecent.data.score}%`, background:mostRecent.q.color, borderRadius:3 }}/>
+              </div>
+              <div style={{ fontSize: wide?10:9, color:L.muted, marginTop:4 }}>Last session: {mostRecent.data.score}%</div>
+            </div>
+            <div onClick={()=>setActiveQ(mostRecent.q.id)} className="mra-hover-btn" style={{ flex:"none", background:L.navy, color:"#fff", fontSize: wide?11.5:10.5,
+              fontWeight:600, padding: wide?"10px 18px":"8px 14px", borderRadius:999, cursor:"pointer" }}>Continue</div>
+          </div>
+        ) : (
+          <div style={{ padding: wide ? "16px 22px 20px" : "12px 18px 18px" }}>
+            <div style={{ fontSize: wide?13:12, color:L.muted, marginBottom:10 }}>You haven't started a quiz yet.</div>
+            <div onClick={()=>setView("library")} className="mra-hover-btn" style={{ background:L.navy, color:"#fff", fontSize: wide?12:11, fontWeight:600,
+              padding: wide?"10px 18px":"9px 16px", borderRadius:999, display:"inline-block", cursor:"pointer" }}>Browse Library</div>
+          </div>
+        )}
       </div>
+    );
 
-      <div style={{ margin:"12px 20px 0 20px" }}>
-        <div style={{ background:L.card, borderRadius:22, boxShadow:"0 3px 10px -4px rgba(14,35,72,.10)", border:`1px solid ${L.line}` }}>
-          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 18px 0" }}>
-            <div style={{ fontSize:13.5, fontWeight:600, color:L.ink }}>Today's Goal</div>
-          </div>
-          <div style={{ padding:"10px 18px 16px" }}>
-            <div style={{ fontSize:12.5, fontWeight:600, color:L.ink, marginBottom:9 }}>Answer {DAILY_GOAL} questions</div>
-            <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-              <div style={{ flex:1, height:8, borderRadius:4, background:L.line, overflow:"hidden" }}>
-                <div style={{ height:"100%", width:`${Math.min(100,dailyAnswered/DAILY_GOAL*100)}%`, background:L.blue, borderRadius:4 }}/>
-              </div>
-              <div style={{ fontSize:11, fontWeight:600, color:L.ink }}>{Math.min(dailyAnswered,DAILY_GOAL)} / {DAILY_GOAL}</div>
-              <TrophyIcon color={L.gold} size={17}/>
+    const goalCard = (
+      <div className="mra-hover-lift" style={{ background:L.card, borderRadius:22, boxShadow:"0 3px 10px -4px rgba(14,35,72,.10)", border:`1px solid ${L.line}` }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding: wide?"18px 22px 0":"14px 18px 0" }}>
+          <div style={{ fontSize: wide?15:13.5, fontWeight:600, color:L.ink }}>Today's Goal</div>
+        </div>
+        <div style={{ padding: wide?"14px 22px 20px":"10px 18px 16px" }}>
+          <div style={{ fontSize: wide?14:12.5, fontWeight:600, color:L.ink, marginBottom:9 }}>Answer {DAILY_GOAL} questions</div>
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            <div style={{ flex:1, height: wide?10:8, borderRadius:4, background:L.line, overflow:"hidden" }}>
+              <div style={{ height:"100%", width:`${Math.min(100,dailyAnswered/DAILY_GOAL*100)}%`, background:L.blue, borderRadius:4 }}/>
             </div>
+            <div style={{ fontSize: wide?12.5:11, fontWeight:600, color:L.ink }}>{Math.min(dailyAnswered,DAILY_GOAL)} / {DAILY_GOAL}</div>
+            <TrophyIcon color={L.gold} size={wide?20:17}/>
           </div>
         </div>
       </div>
-      <div style={{ height:15 }}/>
-    </>
-  ));
+    );
+
+    const tipCard = (
+      <div className="mra-hover-lift" style={{ background:L.navyNav, borderRadius:22, padding:"20px 22px", color:"#fff" }}>
+        <div style={{ fontSize:11, letterSpacing:".5px", textTransform:"uppercase", color:L.gold, fontWeight:700, marginBottom:8 }}>Quick Stats</div>
+        <div style={{ display:"flex", gap:16 }}>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:22, fontWeight:800 }}>{streak}</div>
+            <div style={{ fontSize:10, color:"#a9b4c9", marginTop:2 }}>Day Streak</div>
+          </div>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:22, fontWeight:800 }}>{completedCount}</div>
+            <div style={{ fontSize:10, color:"#a9b4c9", marginTop:2 }}>Quizzes Done</div>
+          </div>
+        </div>
+      </div>
+    );
+
+    if (!wide) return shell("home", (
+      <>
+        <div style={{ margin:"0 20px" }}>{greeting}</div>
+        <div style={{ margin:"15px 20px 0" }}>{progressCard}</div>
+        <div style={{ margin:"15px 20px 0" }}>{subjCards}</div>
+        <div style={{ margin:"15px 20px 0" }}>{continueCard}</div>
+        <div style={{ margin:"12px 20px 0" }}>{goalCard}</div>
+        <div style={{ height:15 }}/>
+      </>
+    ));
+
+    return shell("home", (
+      <div style={{ display:"flex", gap:22, padding: `18px ${wide?28:20}px 24px` }}>
+        <div style={{ flex:1, minWidth:0, display:"flex", flexDirection:"column", gap:18 }}>
+          {greeting}
+          {progressCard}
+          {subjCards}
+          {continueCard}
+        </div>
+        <div style={{ width:300, flex:"none", display:"flex", flexDirection:"column", gap:18 }}>
+          {tipCard}
+          {goalCard}
+        </div>
+      </div>
+    ));
+  }
 
   // ── LIBRARY ───────────────────────────────────────────────────
   if (view === "library") return shell("library", (
@@ -1548,20 +1626,47 @@ export default function MasterReviewAcademy() {
       </div>
 
       <div style={{ margin:"12px 20px 0" }}>
-        <div style={{ background:"#fff", border:`1px solid ${L.line}`, borderRadius:16, padding:"14px 18px" }}>
+        <div className="mra-hover-lift" style={{ background:"#fff", border:`1px solid ${L.line}`, borderRadius:16, padding:"14px 18px" }}>
           <div style={{ fontSize:13.5, fontWeight:600, color:L.ink, marginBottom:2 }}>Subject Performance</div>
-          <div onClick={()=>{setFilterS("all-prof");setView("library");}} style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 0", cursor:"pointer" }}>
-            <div style={{ width:9, height:9, borderRadius:"50%", background:L.green, flex:"none" }}/>
-            <div style={{ fontSize:10.5, color:L.ink, width:110, flex:"none" }}>Professional Ed</div>
-            <div style={{ flex:1, height:7, borderRadius:4, background:L.line, overflow:"hidden" }}><div style={{ height:"100%", width:`${avgOf(profSubset)}%`, background:L.green, borderRadius:4 }}/></div>
-            <div style={{ fontSize:10.5, fontWeight:700, color:L.ink, width:32, textAlign:"right", flex:"none" }}>{avgOf(profSubset)}%</div>
-          </div>
-          <div onClick={()=>{setFilterS("all-gened");setView("library");}} style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 0", cursor:"pointer" }}>
-            <div style={{ width:9, height:9, borderRadius:"50%", background:L.purple, flex:"none" }}/>
-            <div style={{ fontSize:10.5, color:L.ink, width:110, flex:"none" }}>General Ed</div>
-            <div style={{ flex:1, height:7, borderRadius:4, background:L.line, overflow:"hidden" }}><div style={{ height:"100%", width:`${avgOf(genSubset)}%`, background:L.purple, borderRadius:4 }}/></div>
-            <div style={{ fontSize:10.5, fontWeight:700, color:L.ink, width:32, textAlign:"right", flex:"none" }}>{avgOf(genSubset)}%</div>
-          </div>
+          {viewport === "phone" ? (
+            <>
+              <div onClick={()=>{setFilterS("all-prof");setView("library");}} style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 0", cursor:"pointer" }}>
+                <div style={{ width:9, height:9, borderRadius:"50%", background:L.green, flex:"none" }}/>
+                <div style={{ fontSize:10.5, color:L.ink, width:110, flex:"none" }}>Professional Ed</div>
+                <div style={{ flex:1, height:7, borderRadius:4, background:L.line, overflow:"hidden" }}><div style={{ height:"100%", width:`${avgOf(profSubset)}%`, background:L.green, borderRadius:4 }}/></div>
+                <div style={{ fontSize:10.5, fontWeight:700, color:L.ink, width:32, textAlign:"right", flex:"none" }}>{avgOf(profSubset)}%</div>
+              </div>
+              <div onClick={()=>{setFilterS("all-gened");setView("library");}} style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 0", cursor:"pointer" }}>
+                <div style={{ width:9, height:9, borderRadius:"50%", background:L.purple, flex:"none" }}/>
+                <div style={{ fontSize:10.5, color:L.ink, width:110, flex:"none" }}>General Ed</div>
+                <div style={{ flex:1, height:7, borderRadius:4, background:L.line, overflow:"hidden" }}><div style={{ height:"100%", width:`${avgOf(genSubset)}%`, background:L.purple, borderRadius:4 }}/></div>
+                <div style={{ fontSize:10.5, fontWeight:700, color:L.ink, width:32, textAlign:"right", flex:"none" }}>{avgOf(genSubset)}%</div>
+              </div>
+            </>
+          ) : (
+            <div style={{ display:"flex", gap:32, padding:"14px 8px 6px", justifyContent:"space-around" }}>
+              {[
+                { label:"Professional Ed", pct:avgOf(profSubset), color:L.green, filter:"all-prof" },
+                { label:"General Ed", pct:avgOf(genSubset), color:L.purple, filter:"all-gened" },
+              ].map(d => (
+                <div key={d.label} onClick={()=>{setFilterS(d.filter);setView("library");}}
+                  style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:12, cursor:"pointer" }}>
+                  <div style={{ position:"relative", width:128, height:128 }}>
+                    <DonutChart pct={d.pct} color={d.color} size={128} stroke={14}/>
+                    <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column",
+                      alignItems:"center", justifyContent:"center" }}>
+                      <div style={{ fontSize:24, fontWeight:800, color:L.ink }}>{d.pct}%</div>
+                      <div style={{ fontSize:9, color:L.muted }}>mastery</div>
+                    </div>
+                  </div>
+                  <div style={{ display:"flex", alignItems:"center", gap:7 }}>
+                    <div style={{ width:9, height:9, borderRadius:"50%", background:d.color }}/>
+                    <div style={{ fontSize:12.5, fontWeight:600, color:L.ink }}>{d.label}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
