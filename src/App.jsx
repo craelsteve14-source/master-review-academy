@@ -125,6 +125,25 @@ const ADMIN_USER = "crael";
 const ADMIN_PASS = "ftrc2024";
 
 // ═══════════════════════════════════════════════════════════════════
+// RESPONSIVE — phone / tablet / desktop breakpoints
+// ═══════════════════════════════════════════════════════════════════
+function useViewport() {
+  const getBp = () => {
+    const w = window.innerWidth;
+    if (w >= 1100) return "desktop";
+    if (w >= 768) return "tablet";
+    return "phone";
+  };
+  const [bp, setBp] = useState(getBp);
+  useEffect(() => {
+    const onResize = () => setBp(getBp());
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  return bp;
+}
+
+// ═══════════════════════════════════════════════════════════════════
 // STORAGE — per-user isolation + Supabase sync
 // ═══════════════════════════════════════════════════════════════════
 function useStorage(username) {
@@ -340,15 +359,28 @@ function Mascot({ pose = "idle", size = 92 }) {
   );
 }
 
-function MascotBubble({ children, tailSide = "left" }) {
+function MascotBubble({ children, tailSide = "left", scale = 1 }) {
+  const tailPos = tailSide === "bottom"
+    ? { bottom: -6, right: 30 }
+    : { top: "50%", [tailSide]: -6, transform: "translateY(-50%)" };
+  const tailShadow = tailSide === "bottom" ? "3px 3px 5px -4px rgba(14,35,72,.15)"
+    : tailSide === "right" ? "3px -3px 5px -4px rgba(14,35,72,.15)" : "-3px 3px 5px -4px rgba(14,35,72,.15)";
   return (
-    <div style={{ background: "#fff", borderRadius: 16, padding: "12px 14px",
-      fontSize: 12, color: L.ink, lineHeight: 1.55, boxShadow: "0 4px 14px -4px rgba(14,35,72,.18)",
+    <div style={{ background: "#fff", borderRadius: Math.round(16*scale), padding: `${Math.round(12*scale)}px ${Math.round(14*scale)}px`,
+      fontSize: Math.round(12*scale), color: L.ink, lineHeight: 1.55, boxShadow: "0 4px 14px -4px rgba(14,35,72,.18)",
       animation: "mraBubbleIn .35s ease", position: "relative", flex: 1, minWidth: 0 }}>
       {children}
-      <div style={{ position: "absolute", top: "50%", [tailSide]: -6, width: 14, height: 14, background: "#fff",
-        transform: "translateY(-50%) rotate(45deg)",
-        boxShadow: tailSide === "right" ? "3px -3px 5px -4px rgba(14,35,72,.15)" : "-3px 3px 5px -4px rgba(14,35,72,.15)" }} />
+      <div style={{ position: "absolute", width: 14, height: 14, background: "#fff", ...tailPos,
+        transform: `${tailPos.transform||""} rotate(45deg)`.trim(), boxShadow: tailShadow }} />
+    </div>
+  );
+}
+
+function MascotStrip({ pose = "idle", size = 108, message, scale = 1 }) {
+  return (
+    <div style={{ margin: `${Math.round(12*scale)}px ${Math.round(20*scale)}px 0`, display: "flex", flexDirection: "row-reverse", alignItems: "center", gap: 12 }}>
+      <Mascot pose={pose} size={Math.round(size*scale)}/>
+      <MascotBubble tailSide="right" scale={scale}>{message}</MascotBubble>
     </div>
   );
 }
@@ -365,6 +397,65 @@ function BottomNav({ active, onNav }) {
           <span style={{ fontSize:9, fontWeight:500 }}>{n.label}</span>
         </button>
       ))}
+    </div>
+  );
+}
+
+function Sidebar({ active, onNav, user, isAdmin, onAdmin, onLogout, streak, mastery }) {
+  return (
+    <div style={{ width: 248, flex: "none", background: L.navyNav, minHeight: "100vh",
+      display: "flex", flexDirection: "column", padding: "26px 0",
+      backgroundImage: "radial-gradient(circle at 15% -10%, rgba(240,186,72,.14), transparent 45%)" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 22px 28px" }}>
+        <svg width="30" height="26" viewBox="0 0 26 22" style={{ flex: "none" }}><path d="M13 0L26 5.5L13 11L0 5.5L13 0Z" fill={L.gold}/><path d="M6 8V14C6 14 9 17 13 17C17 17 20 14 20 14V8L13 11L6 8Z" fill={L.gold}/></svg>
+        <div style={{ lineHeight: 1.2 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", letterSpacing: ".2px" }}>MASTER REVIEW</div>
+          <div style={{ fontSize: 9.5, color: "#8a93a8", letterSpacing: "1px" }}>ACADEMY</div>
+        </div>
+      </div>
+
+      <div style={{ margin: "0 18px 24px", background: "rgba(255,255,255,.06)", borderRadius: 16,
+        padding: "14px 16px", display: "flex", alignItems: "center", gap: 0,
+        border: "1px solid rgba(255,255,255,.08)" }}>
+        <div style={{ flex: 1, textAlign: "center" }}>
+          <div style={{ fontSize: 19, fontWeight: 800, color: L.gold }}>{streak}</div>
+          <div style={{ fontSize: 8.5, color: "#a9b4c9", marginTop: 2, letterSpacing: ".3px" }}>DAY STREAK</div>
+        </div>
+        <div style={{ width: 1, height: 30, background: "rgba(255,255,255,.12)" }}/>
+        <div style={{ flex: 1, textAlign: "center" }}>
+          <div style={{ fontSize: 19, fontWeight: 800, color: "#fff" }}>{mastery}%</div>
+          <div style={{ fontSize: 8.5, color: "#a9b4c9", marginTop: 2, letterSpacing: ".3px" }}>MASTERY</div>
+        </div>
+      </div>
+
+      <div style={{ flex: 1 }}>
+        {LNAV_ITEMS.map(n => (
+          <div key={n.id} onClick={()=>onNav(n.id)} className="mra-hover-navitem"
+            style={{ display:"flex", alignItems:"center", gap:12,
+            padding:"13px 22px", cursor:"pointer", color: active===n.id ? L.gold : "#c3c9d6",
+            background: active===n.id ? "rgba(240,186,72,.1)" : "transparent",
+            borderLeft: active===n.id ? `3px solid ${L.gold}` : "3px solid transparent", fontFamily:pf }}>
+            <NavIcon type={n.icon} active={active===n.id}/>
+            <span style={{ fontSize:13, fontWeight:600 }}>{n.label}</span>
+          </div>
+        ))}
+        {isAdmin && (
+          <div onClick={onAdmin} className="mra-hover-navitem" style={{ display:"flex", alignItems:"center", gap:12, padding:"13px 22px",
+            cursor:"pointer", color:"#7fb3e8", fontFamily:pf }}>
+            <span style={{ fontSize:13, fontWeight:600 }}>Admin Panel</span>
+          </div>
+        )}
+      </div>
+      <div style={{ padding:"14px 22px 0", borderTop:"1px solid rgba(255,255,255,.1)" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:12 }}>
+          <div style={{ width:36, height:36, borderRadius:"50%", background:L.gold, color:L.navy, fontWeight:700,
+            fontSize:13, display:"flex", alignItems:"center", justifyContent:"center", flex:"none" }}>
+            {(user||"?").slice(0,2).toUpperCase()}
+          </div>
+          <span style={{ fontSize:12.5, fontWeight:600, color:"#fff", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{user}</span>
+        </div>
+        <div onClick={onLogout} style={{ fontSize:11.5, fontWeight:600, color:"#E5484D", cursor:"pointer" }}>Log Out</div>
+      </div>
     </div>
   );
 }
@@ -940,6 +1031,12 @@ function QuizEngine({ rawQuestions, title, quizId, accentColor, onExit, username
         <div style={{ fontSize:11, color:accentColor, letterSpacing:"2px", textTransform:"uppercase", fontWeight:700, marginBottom:16 }}>
           Progress Report · Q{ckpt.ni} of {total}
         </div>
+        <div style={{ display:"flex", flexDirection:"column", gap:6, marginBottom:24 }}>
+          <MascotBubble tailSide="bottom">{ckpt.acc >= 70 ? "You're doing great — keep it up!" : "Stay focused, you've got this!"}</MascotBubble>
+          <div style={{ display:"flex", justifyContent:"flex-end" }}>
+            <Mascot pose={ckpt.acc >= 70 ? "happy" : "idle"} size={140}/>
+          </div>
+        </div>
         <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:24 }}>
           {[{l:"Correct",v:ckpt.correct,c:L.green},{l:"Wrong",v:ckpt.wrong,c:"#E5484D"},{l:"Accuracy",v:ckpt.acc+"%",c:accentColor},{l:"Left",v:total-ckpt.ni,c:L.muted}].map(s=>(
             <div key={s.l} style={{ background:L.card, borderRadius:12, padding:"14px 10px", textAlign:"center", border:`1px solid ${L.line}` }}>
@@ -964,11 +1061,15 @@ function QuizEngine({ rawQuestions, title, quizId, accentColor, onExit, username
       <div style={{ background:L.bg, minHeight:"100vh", fontFamily:pf, color:L.ink }}>
         <LQuizBar title="Results" right={<span onClick={onExit} style={{ color:L.blue, fontSize:12, fontWeight:600, cursor:"pointer" }}>← Library</span>} />
         <div style={{ maxWidth:740, margin:"0 auto", padding:"28px 20px" }}>
-          <div style={{ background:gr.bg, borderRadius:20, padding:"28px", textAlign:"center", border:`1px solid ${gr.bdr}`, marginBottom:20 }}>
-            <div style={{ fontSize:11, color:gr.c, letterSpacing:"2px", textTransform:"uppercase", fontWeight:700, marginBottom:8 }}>Final Score</div>
-            <div style={{ fontSize:60, fontWeight:900, color:gr.c, letterSpacing:"-3px", lineHeight:1 }}>{finalScore}%</div>
-            <div style={{ fontSize:18, fontWeight:700, color:gr.c, marginTop:6 }}>{gr.l}</div>
-            <div style={{ fontSize:12, color:L.muted, marginTop:6 }}>{correct} correct · {wrong} incorrect · {total} total questions</div>
+          <div style={{ background:gr.bg, borderRadius:20, padding:"22px 20px", border:`1px solid ${gr.bdr}`, marginBottom:20,
+            display:"flex", alignItems:"center", gap:8 }}>
+            <div style={{ flex:1, textAlign:"center" }}>
+              <div style={{ fontSize:11, color:gr.c, letterSpacing:"2px", textTransform:"uppercase", fontWeight:700, marginBottom:8 }}>Final Score</div>
+              <div style={{ fontSize:48, fontWeight:900, color:gr.c, letterSpacing:"-3px", lineHeight:1 }}>{finalScore}%</div>
+              <div style={{ fontSize:16, fontWeight:700, color:gr.c, marginTop:6 }}>{gr.l}</div>
+              <div style={{ fontSize:11, color:L.muted, marginTop:6 }}>{correct} correct · {wrong} incorrect · {total} total questions</div>
+            </div>
+            <Mascot pose={finalScore >= 80 ? "happy" : finalScore >= 50 ? "idle" : "oops"} size={132}/>
           </div>
 
           {/* Diff breakdown */}
@@ -1088,14 +1189,15 @@ function QuizEngine({ rawQuestions, title, quizId, accentColor, onExit, username
               </button>
             ) : (
               <>
-                <div style={{ display:"flex", flexDirection:"row-reverse", gap:14, alignItems:"center",
-                  marginTop:6, marginBottom:8 }}>
-                  <Mascot pose={ok ? "happy" : "oops"} size={126}/>
-                  <MascotBubble tailSide="right">
+                <div style={{ display:"flex", flexDirection:"column", gap:6, marginTop:6, marginBottom:8 }}>
+                  <MascotBubble tailSide="bottom">
                     <div style={{ fontSize:10.5, fontWeight:600, marginBottom:4, color:L.muted }}>{feedbackMsg}</div>
                     <div style={{ fontWeight:700, marginBottom:4, color:ok?"#177A42":"#C22A2F" }}>{ok?"Correct.":"Incorrect. Answer: "+getA(q)}</div>
                     <div style={{ color:L.ink }}>{getE(q)}</div>
                   </MascotBubble>
+                  <div style={{ display:"flex", justifyContent:"flex-end" }}>
+                    <Mascot pose={ok ? "happy" : "oops"} size={158}/>
+                  </div>
                 </div>
                 <button onClick={next}
                   style={{ width:"100%", background:L.navy, color:"#fff", border:"none", borderRadius:11,
@@ -1129,6 +1231,9 @@ export default function MasterReviewAcademy() {
   const [master350,setMaster350]= useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [homeMsg] = useState(() => pickMsg("idle"));
+  const viewport = useViewport();
+  const S = viewport === "desktop" ? 1.9 : viewport === "tablet" ? 1.5 : 1;
+  const rs = n => Math.round(n * S);
 
   // Save session to localStorage whenever it changes
   useEffect(() => {
@@ -1204,327 +1309,374 @@ export default function MasterReviewAcademy() {
     .sort((a,b) => new Date(b.data.date) - new Date(a.data.date))[0];
   const dailyAnswered = getDailyAnswered(storage);
 
-  const shell = (active, content) => (
-    <div style={{ background:L.bg, minHeight:"100vh", display:"flex", justifyContent:"center", fontFamily:pf }}>
-      <div style={{ width:"100%", maxWidth:480, minHeight:"100vh", display:"flex", flexDirection:"column", background:L.bg }}>
-        <LHeader user={user} onMenu={()=>setMenuOpen(true)} onBell={()=>{}}/>
-        {content}
-        <BottomNav active={active} onNav={v => {
-          if (v === "master") { setView("master"); return; }
-          setView(v);
-        }}/>
-      </div>
-      {menuOpen && <LMenu user={user} isAdmin={isAdmin} onClose={()=>setMenuOpen(false)}
-        onNav={v=>{setMenuOpen(false); setView(v==="master"?"master":v);}}
-        onAdmin={()=>{setMenuOpen(false); setView("admin");}}
-        onLogout={()=>{setMenuOpen(false); handleLogout();}}/>}
-    </div>
-  );
+  const shell = (active, content) => {
+    const nav = v => setView(v === "master" ? "master" : v);
 
-  const SubjRing = ({ pct, color, tint }) => (
-    <div style={{ width:52, height:52, borderRadius:"50%", margin:"8px auto 6px", display:"flex", alignItems:"center",
+    if (viewport === "desktop") return (
+      <div style={{ background:L.bg, minHeight:"100vh", display:"flex", fontFamily:pf }}>
+        <Sidebar active={active} onNav={nav} user={user} isAdmin={isAdmin}
+          onAdmin={()=>setView("admin")} onLogout={handleLogout} streak={streak} mastery={totalMastery()}/>
+        <div style={{ flex:1, minHeight:"100vh", display:"flex", justifyContent:"center" }}>
+          <div style={{ width:"100%", maxWidth:900, display:"flex", flexDirection:"column" }}>
+            <div style={{ height:60, padding:"0 8px 0 28px", display:"flex", alignItems:"center", justifyContent:"flex-end" }}>
+              <svg width="20" height="22" viewBox="0 0 20 22"><path d="M10 0C7.79 0 6 1.79 6 4V4.6C3.6 5.7 2 8.1 2 11V15L0 18H20L18 15V11C18 8.1 16.4 5.7 14 4.6V4C14 1.79 12.21 0 10 0Z" fill={L.ink}/><path d="M7 19C7 20.66 8.34 22 10 22C11.66 22 13 20.66 13 19H7Z" fill={L.ink}/></svg>
+            </div>
+            {content}
+          </div>
+        </div>
+      </div>
+    );
+
+    const contentMaxWidth = viewport === "tablet" ? 720 : 480;
+    return (
+      <div style={{ background:L.bg, minHeight:"100vh", display:"flex", justifyContent:"center", fontFamily:pf }}>
+        <div style={{ width:"100%", maxWidth:contentMaxWidth, minHeight:"100vh", display:"flex", flexDirection:"column", background:L.bg }}>
+          <LHeader user={user} onMenu={()=>setMenuOpen(true)} onBell={()=>{}}/>
+          {content}
+          <BottomNav active={active} onNav={nav}/>
+        </div>
+        {menuOpen && <LMenu user={user} isAdmin={isAdmin} onClose={()=>setMenuOpen(false)}
+          onNav={v=>{setMenuOpen(false); nav(v);}}
+          onAdmin={()=>{setMenuOpen(false); setView("admin");}}
+          onLogout={()=>{setMenuOpen(false); handleLogout();}}/>}
+      </div>
+    );
+  };
+
+  const SubjRing = ({ pct, color, tint, scale = 1 }) => (
+    <div style={{ width:Math.round(52*scale), height:Math.round(52*scale), borderRadius:"50%", margin:`${Math.round(8*scale)}px auto ${Math.round(6*scale)}px`, display:"flex", alignItems:"center",
       justifyContent:"center", position:"relative",
       background:`conic-gradient(${color} 0deg ${Math.min(pct,100)*3.6}deg, ${tint} ${Math.min(pct,100)*3.6}deg 360deg)` }}>
-      <div style={{ position:"absolute", inset:5, borderRadius:"50%", background:L.bg }}/>
-      <div style={{ position:"relative", fontSize:12.5, fontWeight:700, color:L.ink }}>{pct}%</div>
+      <div style={{ position:"absolute", inset:Math.round(5*scale), borderRadius:"50%", background:L.bg }}/>
+      <div style={{ position:"relative", fontSize:Math.round(12.5*scale*10)/10, fontWeight:700, color:L.ink }}>{pct}%</div>
     </div>
   );
 
   // ── HOME ──────────────────────────────────────────────────────
-  if (view === "home") return shell("home", (
-    <>
-      <div style={{ margin:"0 20px", padding:"20px 0 0 20px", background:L.cream, borderRadius:22, minHeight:230,
-        display:"flex", alignItems:"flex-end", gap:2, overflow:"hidden", position:"relative" }}>
-        <div style={{ flex:1, minWidth:0, maxWidth:"50%", paddingBottom:22 }}>
-          <h1 style={{ fontSize:19, fontWeight:600, color:L.ink, lineHeight:1.28 }}>Good {new Date().getHours()<12?"morning":new Date().getHours()<18?"afternoon":"evening"},<br/>{user}!</h1>
-          <p style={{ fontSize:11, color:"#8a7f6f", marginTop:10, lineHeight:1.5 }}>{homeMsg}</p>
-          <div onClick={()=>setView("library")} style={{ display:"inline-block", marginTop:12, background:L.navy, color:"#fff",
-            fontSize:10.5, fontWeight:600, padding:"8px 15px", borderRadius:999, cursor:"pointer" }}>Let's Review →</div>
+  if (view === "home") {
+    const wide = viewport !== "phone";
+
+    const greeting = (
+      <div className="mra-hover-lift" style={{ padding: `${rs(20)}px 0 0 ${rs(20)}px`, background:L.cream, borderRadius:rs(22),
+        minHeight: rs(230), display:"flex", alignItems:"flex-end", gap:2, overflow:"hidden", position:"relative" }}>
+        <div style={{ flex:1, minWidth:0, maxWidth: wide ? "58%" : "50%", paddingBottom: rs(22) }}>
+          <h1 style={{ fontSize: rs(19), fontWeight:600, color:L.ink, lineHeight:1.28 }}>Good {new Date().getHours()<12?"morning":new Date().getHours()<18?"afternoon":"evening"},<br/>{user}!</h1>
+          <p style={{ fontSize: rs(11), color:"#8a7f6f", marginTop:rs(10), lineHeight:1.5 }}>{homeMsg}</p>
+          <div onClick={()=>setView("library")} className="mra-hover-btn" style={{ display:"inline-block", marginTop: rs(12), background:L.navy, color:"#fff",
+            fontSize: rs(10.5), fontWeight:600, padding: `${rs(8)}px ${rs(15)}px`, borderRadius:999, cursor:"pointer", whiteSpace:"nowrap" }}>Let's Review →</div>
         </div>
-        <div style={{ flex:"none", marginBottom:-6, marginRight:-8 }}>
-          <Mascot pose="idle" size={205}/>
+        <div style={{ flex:"none", marginBottom:-6, marginRight: rs(-8) }}>
+          <Mascot pose="idle" size={rs(205)}/>
         </div>
       </div>
+    );
 
-      <div style={{ margin:"15px 20px 0" }}>
-        <div style={{ background:L.navy, borderRadius:22, padding:20, color:"#fff" }}>
-          <div style={{ fontSize:14.5, fontWeight:600, marginBottom:16 }}>Overall Progress</div>
-          <div style={{ display:"flex", alignItems:"center", gap:18 }}>
-            <div style={{ width:112, height:112, borderRadius:"50%", flex:"none",
-              background:`conic-gradient(${L.gold} 0deg ${totalMastery()*3.6}deg, rgba(255,255,255,.14) ${totalMastery()*3.6}deg 360deg)`,
-              display:"flex", alignItems:"center", justifyContent:"center", position:"relative" }}>
-              <div style={{ position:"absolute", inset:12, borderRadius:"50%", background:L.navy }}/>
-              <div style={{ position:"relative", textAlign:"center" }}>
-                <div style={{ fontSize:22, fontWeight:700 }}>{totalMastery()}%</div>
-                <div style={{ fontSize:9, color:"#c9d2e2", marginTop:1 }}>Mastery</div>
-              </div>
+    const progressCard = (
+      <div className="mra-hover-lift" style={{ background:L.navy, borderRadius:rs(22), padding: rs(20), color:"#fff" }}>
+        <div style={{ fontSize: rs(14.5), fontWeight:600, marginBottom: rs(16) }}>Overall Progress</div>
+        <div style={{ display:"flex", alignItems:"center", gap: rs(18) }}>
+          <div style={{ width: rs(112), height: rs(112), borderRadius:"50%", flex:"none",
+            background:`conic-gradient(${L.gold} 0deg ${totalMastery()*3.6}deg, rgba(255,255,255,.14) ${totalMastery()*3.6}deg 360deg)`,
+            display:"flex", alignItems:"center", justifyContent:"center", position:"relative" }}>
+            <div style={{ position:"absolute", inset: rs(12), borderRadius:"50%", background:L.navy }}/>
+            <div style={{ position:"relative", textAlign:"center" }}>
+              <div style={{ fontSize: rs(22), fontWeight:700 }}>{totalMastery()}%</div>
+              <div style={{ fontSize: rs(9), color:"#c9d2e2", marginTop:1 }}>Mastery</div>
             </div>
-            <div style={{ flex:1, display:"flex", flexDirection:"column", gap:9, minWidth:0 }}>
-              <div><div style={{ fontSize:10, color:"#a9b4c9" }}>Correct Answer</div><div style={{ fontSize:15, fontWeight:600, marginTop:1 }}>{correctAnswers.toLocaleString()}</div></div>
-              <div><div style={{ fontSize:10, color:"#a9b4c9" }}>Questions Answered</div><div style={{ fontSize:15, fontWeight:600, marginTop:1 }}>{questionsAnswered.toLocaleString()}</div></div>
-              <div><div style={{ fontSize:10, color:"#a9b4c9" }}>Remaining</div><div style={{ fontSize:15, fontWeight:600, marginTop:1 }}>{remainingQuestions.toLocaleString()}</div></div>
-            </div>
+          </div>
+          <div style={{ flex:1, display:"flex", flexDirection: wide ? "row" : "column", gap: wide ? rs(20) : rs(9), minWidth:0 }}>
+            <div style={{flex: wide?1:"none", minWidth:0}}><div style={{ fontSize: rs(10), color:"#a9b4c9" }}>Correct Answer</div><div style={{ fontSize: rs(15), fontWeight:600, marginTop:1 }}>{correctAnswers.toLocaleString()}</div></div>
+            <div style={{flex: wide?1:"none", minWidth:0}}><div style={{ fontSize: rs(10), color:"#a9b4c9" }}>Questions Answered</div><div style={{ fontSize: rs(15), fontWeight:600, marginTop:1 }}>{questionsAnswered.toLocaleString()}</div></div>
+            <div style={{flex: wide?1:"none", minWidth:0}}><div style={{ fontSize: rs(10), color:"#a9b4c9" }}>Remaining</div><div style={{ fontSize: rs(15), fontWeight:600, marginTop:1 }}>{remainingQuestions.toLocaleString()}</div></div>
           </div>
         </div>
       </div>
+    );
 
-      <div style={{ margin:"15px 20px 0", display:"flex", gap:8 }}>
-        <div onClick={()=>{setFilterS("all-prof");setView("library");}} style={{ flex:1, minWidth:0, borderRadius:16, padding:"12px 6px 10px",
+    const subjCards = (
+      <div style={{ display:"flex", gap: rs(8) }}>
+        <div onClick={()=>{setFilterS("all-prof");setView("library");}} className="mra-hover-lift" style={{ flex:1, minWidth:0, borderRadius:rs(16), padding: `${rs(12)}px ${rs(6)}px ${rs(10)}px`,
           textAlign:"center", background:L.greenTint, cursor:"pointer" }}>
-          <CategoryIcon type="prof" color={L.green}/>
-          <div style={{ fontSize:10.5, fontWeight:600, color:L.ink, marginTop:6 }}>Professional Education</div>
-          <SubjRing pct={avgOf(profSubset)} color={L.green} tint="#d7ead9"/>
-          <div style={{ fontSize:8.5, color:L.muted, marginTop:2 }}>{profSubset.length} quizzes</div>
+          <CategoryIcon type="prof" color={L.green} size={rs(22)}/>
+          <div style={{ fontSize: rs(10.5), fontWeight:600, color:L.ink, marginTop: rs(6) }}>Professional Education</div>
+          <SubjRing pct={avgOf(profSubset)} color={L.green} tint="#d7ead9" scale={S}/>
+          <div style={{ fontSize: rs(8.5), color:L.muted, marginTop:2 }}>{profSubset.length} quizzes</div>
         </div>
-        <div onClick={()=>{setFilterS("all-gened");setView("library");}} style={{ flex:1, minWidth:0, borderRadius:16, padding:"12px 6px 10px",
+        <div onClick={()=>{setFilterS("all-gened");setView("library");}} className="mra-hover-lift" style={{ flex:1, minWidth:0, borderRadius:rs(16), padding: `${rs(12)}px ${rs(6)}px ${rs(10)}px`,
           textAlign:"center", background:L.purpleTint, cursor:"pointer" }}>
-          <CategoryIcon type="gened" color={L.purple}/>
-          <div style={{ fontSize:10.5, fontWeight:600, color:L.ink, marginTop:6 }}>General Education</div>
-          <SubjRing pct={avgOf(genSubset)} color={L.purple} tint="#e6d3f2"/>
-          <div style={{ fontSize:8.5, color:L.muted, marginTop:2 }}>{genSubset.length} quizzes</div>
+          <CategoryIcon type="gened" color={L.purple} size={rs(22)}/>
+          <div style={{ fontSize: rs(10.5), fontWeight:600, color:L.ink, marginTop: rs(6) }}>General Education</div>
+          <SubjRing pct={avgOf(genSubset)} color={L.purple} tint="#e6d3f2" scale={S}/>
+          <div style={{ fontSize: rs(8.5), color:L.muted, marginTop:2 }}>{genSubset.length} quizzes</div>
         </div>
       </div>
+    );
 
-      <div style={{ margin:"15px 20px 0" }}>
-        <div style={{ background:L.card, borderRadius:22, boxShadow:"0 3px 10px -4px rgba(14,35,72,.10)", border:`1px solid ${L.line}` }}>
-          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 18px 0" }}>
-            <div style={{ fontSize:13.5, fontWeight:600, color:L.ink }}>Continue Studying</div>
-            <div onClick={()=>setView("library")} style={{ fontSize:10.5, fontWeight:600, color:L.blue, cursor:"pointer" }}>View All</div>
-          </div>
-          {mostRecent ? (
-            <div style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 18px 16px" }}>
-              <div style={{ width:52, height:52, borderRadius:12, background:`${mostRecent.q.color}22`, flex:"none",
-                display:"flex", alignItems:"center", justifyContent:"center" }}><SubjIcon subjId={mostRecent.q.subjId} color={mostRecent.q.color} size={24}/></div>
-              <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ fontSize:9, color:L.muted }}>{mostRecent.q.category==="gened"?"General Education":"Professional Education"}</div>
-                <div style={{ fontSize:13, fontWeight:700, color:L.ink, margin:"2px 0 6px", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{mostRecent.q.title.split("—")[0].trim()}</div>
-                <div style={{ height:5, borderRadius:3, background:L.line, overflow:"hidden" }}>
-                  <div style={{ height:"100%", width:`${mostRecent.data.score}%`, background:mostRecent.q.color, borderRadius:3 }}/>
-                </div>
-                <div style={{ fontSize:9, color:L.muted, marginTop:4 }}>Last session: {mostRecent.data.score}%</div>
-              </div>
-              <div onClick={()=>setActiveQ(mostRecent.q.id)} style={{ flex:"none", background:L.navy, color:"#fff", fontSize:10.5,
-                fontWeight:600, padding:"8px 14px", borderRadius:999, cursor:"pointer" }}>Continue</div>
-            </div>
-          ) : (
-            <div style={{ padding:"12px 18px 18px" }}>
-              <div style={{ fontSize:12, color:L.muted, marginBottom:10 }}>You haven't started a quiz yet.</div>
-              <div onClick={()=>setView("library")} style={{ background:L.navy, color:"#fff", fontSize:11, fontWeight:600,
-                padding:"9px 16px", borderRadius:999, display:"inline-block", cursor:"pointer" }}>Browse Library</div>
-            </div>
-          )}
+    const continueCard = (
+      <div className="mra-hover-lift" style={{ background:L.card, borderRadius:rs(22), boxShadow:"0 3px 10px -4px rgba(14,35,72,.10)", border:`1px solid ${L.line}` }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding: `${rs(14)}px ${rs(18)}px 0` }}>
+          <div style={{ fontSize: rs(13.5), fontWeight:600, color:L.ink }}>Continue Studying</div>
+          <div onClick={()=>setView("library")} style={{ fontSize: rs(10.5), fontWeight:600, color:L.blue, cursor:"pointer" }}>View All</div>
         </div>
+        {mostRecent ? (
+          <div style={{ display:"flex", alignItems:"center", gap: rs(12), padding: `${rs(12)}px ${rs(18)}px ${rs(16)}px` }}>
+            <div style={{ width: rs(52), height: rs(52), borderRadius:rs(12), background:`${mostRecent.q.color}22`, flex:"none",
+              display:"flex", alignItems:"center", justifyContent:"center" }}><SubjIcon subjId={mostRecent.q.subjId} color={mostRecent.q.color} size={rs(24)}/></div>
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ fontSize: rs(9), color:L.muted }}>{mostRecent.q.category==="gened"?"General Education":"Professional Education"}</div>
+              <div style={{ fontSize: rs(13), fontWeight:700, color:L.ink, margin:"2px 0 6px", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{mostRecent.q.title.split("—")[0].trim()}</div>
+              <div style={{ height:rs(5), borderRadius:3, background:L.line, overflow:"hidden" }}>
+                <div style={{ height:"100%", width:`${mostRecent.data.score}%`, background:mostRecent.q.color, borderRadius:3 }}/>
+              </div>
+              <div style={{ fontSize: rs(9), color:L.muted, marginTop:4 }}>Last session: {mostRecent.data.score}%</div>
+            </div>
+            <div onClick={()=>setActiveQ(mostRecent.q.id)} className="mra-hover-btn" style={{ flex:"none", background:L.navy, color:"#fff", fontSize: rs(10.5),
+              fontWeight:600, padding: `${rs(8)}px ${rs(14)}px`, borderRadius:999, cursor:"pointer" }}>Continue</div>
+          </div>
+        ) : (
+          <div style={{ padding: `${rs(12)}px ${rs(18)}px ${rs(18)}px` }}>
+            <div style={{ fontSize: rs(12), color:L.muted, marginBottom:10 }}>You haven't started a quiz yet.</div>
+            <div onClick={()=>setView("library")} className="mra-hover-btn" style={{ background:L.navy, color:"#fff", fontSize: rs(11), fontWeight:600,
+              padding: `${rs(9)}px ${rs(16)}px`, borderRadius:999, display:"inline-block", cursor:"pointer" }}>Browse Library</div>
+          </div>
+        )}
       </div>
+    );
 
-      <div style={{ margin:"12px 20px 0 20px" }}>
-        <div style={{ background:L.card, borderRadius:22, boxShadow:"0 3px 10px -4px rgba(14,35,72,.10)", border:`1px solid ${L.line}` }}>
-          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 18px 0" }}>
-            <div style={{ fontSize:13.5, fontWeight:600, color:L.ink }}>Today's Goal</div>
-          </div>
-          <div style={{ padding:"10px 18px 16px" }}>
-            <div style={{ fontSize:12.5, fontWeight:600, color:L.ink, marginBottom:9 }}>Answer {DAILY_GOAL} questions</div>
-            <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-              <div style={{ flex:1, height:8, borderRadius:4, background:L.line, overflow:"hidden" }}>
-                <div style={{ height:"100%", width:`${Math.min(100,dailyAnswered/DAILY_GOAL*100)}%`, background:L.blue, borderRadius:4 }}/>
-              </div>
-              <div style={{ fontSize:11, fontWeight:600, color:L.ink }}>{Math.min(dailyAnswered,DAILY_GOAL)} / {DAILY_GOAL}</div>
-              <TrophyIcon color={L.gold} size={17}/>
+    const goalCard = (
+      <div className="mra-hover-lift" style={{ background:L.card, borderRadius:rs(22), boxShadow:"0 3px 10px -4px rgba(14,35,72,.10)", border:`1px solid ${L.line}` }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding: `${rs(14)}px ${rs(18)}px 0` }}>
+          <div style={{ fontSize: rs(13.5), fontWeight:600, color:L.ink }}>Today's Goal</div>
+        </div>
+        <div style={{ padding: `${rs(10)}px ${rs(18)}px ${rs(16)}px` }}>
+          <div style={{ fontSize: rs(12.5), fontWeight:600, color:L.ink, marginBottom:9 }}>Answer {DAILY_GOAL} questions</div>
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            <div style={{ flex:1, height: rs(8), borderRadius:4, background:L.line, overflow:"hidden" }}>
+              <div style={{ height:"100%", width:`${Math.min(100,dailyAnswered/DAILY_GOAL*100)}%`, background:L.blue, borderRadius:4 }}/>
             </div>
+            <div style={{ fontSize: rs(11), fontWeight:600, color:L.ink }}>{Math.min(dailyAnswered,DAILY_GOAL)} / {DAILY_GOAL}</div>
+            <TrophyIcon color={L.gold} size={rs(17)}/>
           </div>
         </div>
       </div>
-      <div style={{ height:15 }}/>
-    </>
-  ));
+    );
+
+    const m = `${rs(15)}px ${rs(20)}px 0`;
+    return shell("home", (
+      <>
+        <div style={{ margin: `0 ${rs(20)}px` }}>{greeting}</div>
+        <div style={{ margin:m }}>{progressCard}</div>
+        <div style={{ margin:m }}>{subjCards}</div>
+        <div style={{ margin:m }}>{continueCard}</div>
+        <div style={{ margin:m }}>{goalCard}</div>
+        <div style={{ height: rs(15) }}/>
+      </>
+    ));
+  }
 
   // ── LIBRARY ───────────────────────────────────────────────────
-  if (view === "library") return shell("library", (
+  if (view === "library") {
+    const wide = viewport !== "phone";
+    return shell("library", (
     <>
-      <div style={{ padding:"6px 20px 4px" }}>
-        <h1 style={{ fontSize:20, fontWeight:700, color:L.ink }}>Library</h1>
-        <p style={{ fontSize:11, color:L.muted, marginTop:3 }}>Browse every subject and jump back into studying</p>
+      <div style={{ padding: `${rs(6)}px ${rs(20)}px ${rs(4)}px` }}>
+        <h1 style={{ fontSize: rs(20), fontWeight:700, color:L.ink }}>Library</h1>
+        <p style={{ fontSize: rs(11), color:L.muted, marginTop:3 }}>Browse every subject and jump back into studying</p>
       </div>
 
-      <div style={{ margin:"15px 20px 0" }}>
+      <MascotStrip message="Found something new to learn today?" scale={S}/>
+
+      <div style={{ margin: `${rs(15)}px ${rs(20)}px 0` }}>
         <div style={{ display:"flex", alignItems:"center", gap:8, background:"#fff", border:`1px solid ${L.line}`,
-          borderRadius:999, padding:"11px 16px" }}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke={L.muted} strokeWidth="2"/><path d="M21 21l-4-4" stroke={L.muted} strokeWidth="2" strokeLinecap="round"/></svg>
+          borderRadius:999, padding: `${rs(11)}px ${rs(16)}px` }}>
+          <svg width={rs(15)} height={rs(15)} viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke={L.muted} strokeWidth="2"/><path d="M21 21l-4-4" stroke={L.muted} strokeWidth="2" strokeLinecap="round"/></svg>
           <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search subjects, topics..."
-            style={{ border:"none", outline:"none", fontSize:11.5, color:L.ink, fontFamily:pf, flex:1, background:"transparent" }}/>
+            style={{ border:"none", outline:"none", fontSize: rs(11.5), color:L.ink, fontFamily:pf, flex:1, background:"transparent" }}/>
         </div>
       </div>
 
-      <div style={{ margin:"12px 20px 0", display:"flex", gap:8, overflowX:"auto", paddingBottom:2 }}>
+      <div style={{ margin: `${rs(12)}px ${rs(20)}px 0`, display:"flex", gap:8, overflowX:"auto", paddingBottom:2 }}>
         {[{id:"all",label:"All"},{id:"all-prof",label:"Professional Ed"},{id:"all-gened",label:"General Ed"}].map(f=>(
-          <div key={f.id} onClick={()=>setFilterS(f.id)} style={{ flex:"none", padding:"7px 14px", borderRadius:999, fontSize:10.5,
+          <div key={f.id} onClick={()=>setFilterS(f.id)} className="mra-hover-btn" style={{ flex:"none", padding: `${rs(7)}px ${rs(14)}px`, borderRadius:999, fontSize: rs(10.5),
             fontWeight:600, whiteSpace:"nowrap", cursor:"pointer",
             background: filterS===f.id ? L.navy : "#fff", color: filterS===f.id ? "#fff" : L.muted,
             border: filterS===f.id ? "none" : `1px solid ${L.line}` }}>{f.label}</div>
         ))}
       </div>
 
-      <div style={{ margin:"12px 20px 0" }}>
-        <div onClick={()=>{setMaster350(buildMaster350());setActiveQ("master");}}
-          style={{ background:L.navy, borderRadius:16, padding:"14px 16px", cursor:"pointer", color:"#fff",
+      <div style={{ margin: `${rs(12)}px ${rs(20)}px 0` }}>
+        <div onClick={()=>{setMaster350(buildMaster350());setActiveQ("master");}} className="mra-hover-lift"
+          style={{ background:L.navy, borderRadius:rs(16), padding: `${rs(14)}px ${rs(16)}px`, cursor:"pointer", color:"#fff",
             display:"flex", alignItems:"center", justifyContent:"space-between", gap:10 }}>
           <div>
-            <div style={{ fontSize:9, color:L.gold, letterSpacing:1, textTransform:"uppercase", fontWeight:700, marginBottom:4 }}>Comprehensive Exam</div>
-            <div style={{ fontSize:13, fontWeight:700 }}>Master Board Exam — 350Q</div>
-            {getData("master") && <div style={{ fontSize:10, color:"#c9d2e2", marginTop:3 }}>Last: {getData("master").score}%</div>}
+            <div style={{ fontSize: rs(9), color:L.gold, letterSpacing:1, textTransform:"uppercase", fontWeight:700, marginBottom:4 }}>Comprehensive Exam</div>
+            <div style={{ fontSize: rs(13), fontWeight:700 }}>Master Board Exam — 350Q</div>
+            {getData("master") && <div style={{ fontSize: rs(10), color:"#c9d2e2", marginTop:3 }}>Last: {getData("master").score}%</div>}
           </div>
-          <div style={{ fontSize:10.5, fontWeight:700, color:L.navy, background:L.gold, padding:"8px 12px", borderRadius:999, flex:"none" }}>Start →</div>
+          <div style={{ fontSize: rs(10.5), fontWeight:700, color:L.navy, background:L.gold, padding: `${rs(8)}px ${rs(12)}px`, borderRadius:999, flex:"none" }}>Start →</div>
         </div>
       </div>
 
-      <div style={{ margin:"15px 20px 0" }}>
-        <div style={{ background:L.card, borderRadius:22, boxShadow:"0 3px 10px -4px rgba(14,35,72,.10)", border:`1px solid ${L.line}`, overflow:"hidden" }}>
+      <div style={{ margin: `${rs(15)}px ${rs(20)}px 0` }}>
+        <div style={{ background:L.card, borderRadius:rs(22), boxShadow:"0 3px 10px -4px rgba(14,35,72,.10)",
+          border:`1px solid ${L.line}`, overflow:"hidden" }}>
           {filtered.length===0 && <div style={{ padding:24, textAlign:"center", fontSize:12, color:L.muted }}>No quizzes match your search.</div>}
           {filtered.map((quiz,i) => {
             const data = getData(quiz.id);
             const tint = data ? `${quiz.color}22` : L.bg;
             return (
-              <div key={quiz.id} onClick={()=>setActiveQ(quiz.id)} style={{ display:"flex", alignItems:"center", gap:12, padding:14, cursor:"pointer",
+              <div key={quiz.id} onClick={()=>setActiveQ(quiz.id)} style={{ display:"flex", alignItems:"center", gap: rs(12), padding: rs(14), cursor:"pointer",
                 borderTop: i>0 ? `1px solid ${L.line}` : "none" }}>
-                <div style={{ width:42, height:42, borderRadius:12, flex:"none", background:tint,
-                  display:"flex", alignItems:"center", justifyContent:"center" }}><SubjIcon subjId={quiz.subjId} color={quiz.color} size={20}/></div>
+                <div style={{ width: rs(42), height: rs(42), borderRadius:12, flex:"none", background:tint,
+                  display:"flex", alignItems:"center", justifyContent:"center" }}><SubjIcon subjId={quiz.subjId} color={quiz.color} size={rs(20)}/></div>
                 <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ fontSize:12.5, fontWeight:600, color:L.ink, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                  <div style={{ fontSize: rs(12.5), fontWeight:600, color:L.ink, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
                     {quiz.title.split("—")[0].trim()}
                   </div>
-                  <div style={{ fontSize:9.5, color:L.muted, marginTop:3 }}>{quiz.questions.length} items · {quiz.category==="gened"?"General Education":"Professional Education"}</div>
+                  <div style={{ fontSize: rs(9.5), color:L.muted, marginTop:3 }}>{quiz.questions.length} items · {quiz.category==="gened"?"General Education":"Professional Education"}</div>
                   <div style={{ height:4, borderRadius:2, background:L.line, marginTop:6, overflow:"hidden" }}>
                     <div style={{ height:"100%", width:`${data?.score||0}%`, borderRadius:2, background:quiz.color }}/>
                   </div>
                 </div>
-                <div style={{ fontSize:12, fontWeight:700, color: data?quiz.color:L.muted, flex:"none" }}>{data ? `${data.score}%` : "—"}</div>
+                <div style={{ fontSize: rs(12), fontWeight:700, color: data?quiz.color:L.muted, flex:"none" }}>{data ? `${data.score}%` : "—"}</div>
                 <svg width="7" height="12" viewBox="0 0 7 12" fill="none" style={{ flex:"none" }}><path d="M1 1l5 5-5 5" stroke={L.muted} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </div>
             );
           })}
         </div>
       </div>
-      <div style={{ height:15 }}/>
+      <div style={{ height: rs(15) }}/>
     </>
   ));
+  }
 
   // ── DASHBOARD ─────────────────────────────────────────────────
-  if (view === "dashboard") return shell("dashboard", (
+  if (view === "dashboard") {
+    const wide = viewport !== "phone";
+    return shell("dashboard", (
     <>
-      <div style={{ padding:"6px 20px 4px" }}>
-        <h1 style={{ fontSize:20, fontWeight:700, color:L.ink }}>Dashboard</h1>
-        <p style={{ fontSize:11, color:L.muted, marginTop:3 }}>Your performance at a glance</p>
+      <div style={{ padding: `${rs(6)}px ${rs(20)}px ${rs(4)}px` }}>
+        <h1 style={{ fontSize: rs(20), fontWeight:700, color:L.ink }}>Dashboard</h1>
+        <p style={{ fontSize: rs(11), color:L.muted, marginTop:3 }}>Your performance at a glance</p>
       </div>
 
-      <div style={{ margin:"15px 20px 0", display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+      <MascotStrip message="Let's see how far you've come!" scale={S}/>
+
+      <div style={{ margin: `${rs(15)}px ${rs(20)}px 0`, display:"grid",
+        gridTemplateColumns:"1fr 1fr", gap: rs(10) }}>
         {[
-          { v:questionsAnswered.toLocaleString(), l:"Questions Answered", icon:<svg width="26" height="26" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke={L.blue} strokeWidth="1.6"/><path d="M12 7v5l4 2" stroke={L.blue} strokeWidth="1.6" strokeLinecap="round"/></svg> },
-          { v:totalMastery()+"%", l:"Overall Mastery", icon:<svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4L12 2z" stroke={L.green} strokeWidth="1.4" strokeLinejoin="round"/></svg> },
-          { v:streak+" Day"+(streak===1?"":"s"), l:"Current Streak", icon:<svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M12 2c3 4-2 5-2 9a4 4 0 108 0c0-1.5-.6-2.3-1.2-3.1.4 2-1 3-1.8 2C16 8 15 5 12 2z" fill={L.orange}/></svg> },
-          { v:`${completedCount}/${QUIZ_REGISTRY.length}`, l:"Quizzes Completed", icon:<svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M12 2l3 6 6.5.9-4.7 4.6L18 20l-6-3.4L6 20l1.2-6.5L2.5 8.9 9 8l3-6z" fill={L.purple}/></svg> },
+          { v:questionsAnswered.toLocaleString(), l:"Questions Answered", icon:<svg width={rs(26)} height={rs(26)} viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke={L.blue} strokeWidth="1.6"/><path d="M12 7v5l4 2" stroke={L.blue} strokeWidth="1.6" strokeLinecap="round"/></svg> },
+          { v:totalMastery()+"%", l:"Overall Mastery", icon:<svg width={rs(26)} height={rs(26)} viewBox="0 0 24 24" fill="none"><path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4L12 2z" stroke={L.green} strokeWidth="1.4" strokeLinejoin="round"/></svg> },
+          { v:streak+" Day"+(streak===1?"":"s"), l:"Current Streak", icon:<svg width={rs(26)} height={rs(26)} viewBox="0 0 24 24" fill="none"><path d="M12 2c3 4-2 5-2 9a4 4 0 108 0c0-1.5-.6-2.3-1.2-3.1.4 2-1 3-1.8 2C16 8 15 5 12 2z" fill={L.orange}/></svg> },
+          { v:`${completedCount}/${QUIZ_REGISTRY.length}`, l:"Quizzes Completed", icon:<svg width={rs(26)} height={rs(26)} viewBox="0 0 24 24" fill="none"><path d="M12 2l3 6 6.5.9-4.7 4.6L18 20l-6-3.4L6 20l1.2-6.5L2.5 8.9 9 8l3-6z" fill={L.purple}/></svg> },
         ].map(t => (
-          <div key={t.l} style={{ background:"#fff", border:`1px solid ${L.line}`, borderRadius:16, padding:14 }}>
+          <div key={t.l} className="mra-hover-lift" style={{ background:"#fff", border:`1px solid ${L.line}`, borderRadius:rs(16), padding: rs(14) }}>
             <div style={{ marginBottom:8 }}>{t.icon}</div>
-            <div style={{ fontSize:17, fontWeight:700, color:L.ink }}>{t.v}</div>
-            <div style={{ fontSize:9.5, color:L.muted, marginTop:2 }}>{t.l}</div>
+            <div style={{ fontSize: rs(17), fontWeight:700, color:L.ink }}>{t.v}</div>
+            <div style={{ fontSize: rs(9.5), color:L.muted, marginTop:2 }}>{t.l}</div>
           </div>
         ))}
       </div>
 
-      <div style={{ margin:"12px 20px 0" }}>
-        <div style={{ background:"#fff", border:`1px solid ${L.line}`, borderRadius:16, padding:"14px 18px" }}>
-          <div style={{ fontSize:13.5, fontWeight:600, color:L.ink, marginBottom:2 }}>Subject Performance</div>
-          <div onClick={()=>{setFilterS("all-prof");setView("library");}} style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 0", cursor:"pointer" }}>
-            <div style={{ width:9, height:9, borderRadius:"50%", background:L.green, flex:"none" }}/>
-            <div style={{ fontSize:10.5, color:L.ink, width:110, flex:"none" }}>Professional Ed</div>
-            <div style={{ flex:1, height:7, borderRadius:4, background:L.line, overflow:"hidden" }}><div style={{ height:"100%", width:`${avgOf(profSubset)}%`, background:L.green, borderRadius:4 }}/></div>
-            <div style={{ fontSize:10.5, fontWeight:700, color:L.ink, width:32, textAlign:"right", flex:"none" }}>{avgOf(profSubset)}%</div>
+      <div style={{ margin: `${rs(12)}px ${rs(20)}px 0` }}>
+        <div className="mra-hover-lift" style={{ background:"#fff", border:`1px solid ${L.line}`, borderRadius:rs(16), padding: `${rs(14)}px ${rs(18)}px` }}>
+          <div style={{ fontSize: rs(13.5), fontWeight:600, color:L.ink, marginBottom:2 }}>Subject Performance</div>
+          <div onClick={()=>{setFilterS("all-prof");setView("library");}} style={{ display:"flex", alignItems:"center", gap: rs(10), padding: `${rs(10)}px 0`, cursor:"pointer" }}>
+            <div style={{ width: rs(9), height: rs(9), borderRadius:"50%", background:L.green, flex:"none" }}/>
+            <div style={{ fontSize: rs(10.5), color:L.ink, width: rs(110), flex:"none" }}>Professional Ed</div>
+            <div style={{ flex:1, height: rs(7), borderRadius:4, background:L.line, overflow:"hidden" }}><div style={{ height:"100%", width:`${avgOf(profSubset)}%`, background:L.green, borderRadius:4 }}/></div>
+            <div style={{ fontSize: rs(10.5), fontWeight:700, color:L.ink, width: rs(32), textAlign:"right", flex:"none" }}>{avgOf(profSubset)}%</div>
           </div>
-          <div onClick={()=>{setFilterS("all-gened");setView("library");}} style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 0", cursor:"pointer" }}>
-            <div style={{ width:9, height:9, borderRadius:"50%", background:L.purple, flex:"none" }}/>
-            <div style={{ fontSize:10.5, color:L.ink, width:110, flex:"none" }}>General Ed</div>
-            <div style={{ flex:1, height:7, borderRadius:4, background:L.line, overflow:"hidden" }}><div style={{ height:"100%", width:`${avgOf(genSubset)}%`, background:L.purple, borderRadius:4 }}/></div>
-            <div style={{ fontSize:10.5, fontWeight:700, color:L.ink, width:32, textAlign:"right", flex:"none" }}>{avgOf(genSubset)}%</div>
+          <div onClick={()=>{setFilterS("all-gened");setView("library");}} style={{ display:"flex", alignItems:"center", gap: rs(10), padding: `${rs(10)}px 0`, cursor:"pointer" }}>
+            <div style={{ width: rs(9), height: rs(9), borderRadius:"50%", background:L.purple, flex:"none" }}/>
+            <div style={{ fontSize: rs(10.5), color:L.ink, width: rs(110), flex:"none" }}>General Ed</div>
+            <div style={{ flex:1, height: rs(7), borderRadius:4, background:L.line, overflow:"hidden" }}><div style={{ height:"100%", width:`${avgOf(genSubset)}%`, background:L.purple, borderRadius:4 }}/></div>
+            <div style={{ fontSize: rs(10.5), fontWeight:700, color:L.ink, width: rs(32), textAlign:"right", flex:"none" }}>{avgOf(genSubset)}%</div>
           </div>
         </div>
       </div>
 
-      <div style={{ margin:"12px 20px 0" }}>
-        <div style={{ background:"#fff", border:`1px solid ${L.line}`, borderRadius:16, padding:"14px 18px" }}>
-          <div style={{ fontSize:13.5, fontWeight:600, color:L.ink, marginBottom:12 }}>All Quizzes</div>
+      <div style={{ margin: `${rs(12)}px ${rs(20)}px 0` }}>
+        <div className="mra-hover-lift" style={{ background:"#fff", border:`1px solid ${L.line}`, borderRadius:rs(16), padding: `${rs(14)}px ${rs(18)}px` }}>
+          <div style={{ fontSize: rs(13.5), fontWeight:600, color:L.ink, marginBottom:12 }}>All Quizzes</div>
           {[...QUIZ_REGISTRY, {id:"master",title:"Master Board Exam",color:L.navy}].map((quiz,i)=>{
             const data = getData(quiz.id);
             return (
-              <div key={quiz.id} style={{ display:"flex", alignItems:"center", gap:10, padding:"9px 0",
+              <div key={quiz.id} style={{ display:"flex", alignItems:"center", gap: rs(10), padding: `${rs(9)}px 0`,
                 borderTop: i>0 ? `1px solid ${L.line}` : "none" }}>
-                <div style={{ width:30, height:30, borderRadius:9, background:`${quiz.color}22`, display:"flex",
+                <div style={{ width: rs(30), height: rs(30), borderRadius:9, background:`${quiz.color}22`, display:"flex",
                   alignItems:"center", justifyContent:"center", flex:"none" }}>
-                  {quiz.id==="master" ? <TrophyIcon color={L.navy} size={16}/> : <SubjIcon subjId={quiz.subjId} color={quiz.color} size={16}/>}
+                  {quiz.id==="master" ? <TrophyIcon color={L.navy} size={rs(16)}/> : <SubjIcon subjId={quiz.subjId} color={quiz.color} size={rs(16)}/>}
                 </div>
                 <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ fontSize:11, fontWeight:600, color:L.ink, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{quiz.title}</div>
+                  <div style={{ fontSize: rs(11), fontWeight:600, color:L.ink, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{quiz.title}</div>
                   <div style={{ height:3, borderRadius:2, background:L.line, marginTop:5, overflow:"hidden" }}><div style={{ height:"100%", width:`${data?.score||0}%`, background:quiz.color, borderRadius:2 }}/></div>
                 </div>
-                <div style={{ textAlign:"right", flex:"none", minWidth:36, fontSize:11, fontWeight:700, color: data?quiz.color:L.muted }}>{data?`${data.score}%`:"—"}</div>
+                <div style={{ textAlign:"right", flex:"none", minWidth:36, fontSize: rs(11), fontWeight:700, color: data?quiz.color:L.muted }}>{data?`${data.score}%`:"—"}</div>
                 <div onClick={()=>{if(quiz.id==="master"){setMaster350(buildMaster350());setActiveQ("master");}else setActiveQ(quiz.id);}}
-                  style={{ fontSize:9.5, fontWeight:600, color:L.blue, cursor:"pointer", flex:"none", padding:"4px 8px" }}>{data?"Retry":"Start"}</div>
+                  className="mra-hover-btn" style={{ fontSize: rs(9.5), fontWeight:600, color:L.blue, cursor:"pointer", flex:"none", padding:"4px 8px" }}>{data?"Retry":"Start"}</div>
               </div>
             );
           })}
         </div>
       </div>
 
-      <div style={{ margin:"12px 20px 0" }}>
-        <div style={{ background:"#fff", border:`1px solid ${L.line}`, borderRadius:16, padding:"14px 18px" }}>
-          <div style={{ fontSize:13.5, fontWeight:600, color:L.ink, marginBottom:10 }}>Study Recommendations</div>
+      <div style={{ margin: `${rs(12)}px ${rs(20)}px 0` }}>
+        <div className="mra-hover-lift" style={{ background:"#fff", border:`1px solid ${L.line}`, borderRadius:rs(16), padding: `${rs(14)}px ${rs(18)}px` }}>
+          <div style={{ fontSize: rs(13.5), fontWeight:600, color:L.ink, marginBottom:10 }}>Study Recommendations</div>
           {QUIZ_REGISTRY.filter(q=>!getData(q.id)||(getData(q.id)?.score||0)<80).length > 0 ? (
             QUIZ_REGISTRY.filter(q=>!getData(q.id)||(getData(q.id)?.score||0)<80).map((quiz,i)=>(
-              <div key={quiz.id} style={{ display:"flex", alignItems:"center", gap:10, padding:"9px 0",
+              <div key={quiz.id} style={{ display:"flex", alignItems:"center", gap: rs(10), padding: `${rs(9)}px 0`,
                 borderTop: i>0 ? `1px solid ${L.line}` : "none" }}>
-                <div style={{ width:28, height:28, borderRadius:8, background:`${quiz.color}22`, display:"flex",
-                  alignItems:"center", justifyContent:"center", flex:"none" }}><SubjIcon subjId={quiz.subjId} color={quiz.color} size={15}/></div>
+                <div style={{ width: rs(28), height: rs(28), borderRadius:8, background:`${quiz.color}22`, display:"flex",
+                  alignItems:"center", justifyContent:"center", flex:"none" }}><SubjIcon subjId={quiz.subjId} color={quiz.color} size={rs(15)}/></div>
                 <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ fontSize:11, fontWeight:600, color:L.ink }}>{quiz.title}</div>
-                  <div style={{ fontSize:9.5, color:L.muted, marginTop:2 }}>{getData(quiz.id)?`Score: ${getData(quiz.id).score}% → Target: 80%+`:"Not yet attempted"}</div>
+                  <div style={{ fontSize: rs(11), fontWeight:600, color:L.ink }}>{quiz.title}</div>
+                  <div style={{ fontSize: rs(9.5), color:L.muted, marginTop:2 }}>{getData(quiz.id)?`Score: ${getData(quiz.id).score}% → Target: 80%+`:"Not yet attempted"}</div>
                 </div>
-                <div onClick={()=>setActiveQ(quiz.id)} style={{ background:quiz.color, color:"#fff", fontSize:10, fontWeight:600,
-                  padding:"6px 12px", borderRadius:999, cursor:"pointer", flex:"none" }}>Practice</div>
+                <div onClick={()=>setActiveQ(quiz.id)} className="mra-hover-btn" style={{ background:quiz.color, color:"#fff", fontSize: rs(10), fontWeight:600,
+                  padding: `${rs(6)}px ${rs(12)}px`, borderRadius:999, cursor:"pointer", flex:"none" }}>Practice</div>
               </div>
             ))
           ) : (
             <div style={{ textAlign:"center", padding:"14px 0" }}>
-              <div style={{ display:"flex", justifyContent:"center", marginBottom:6 }}><TrophyIcon color={L.gold} size={28}/></div>
-              <div style={{ fontSize:13, fontWeight:700, color:L.green }}>All quizzes above 80%!</div>
-              <div style={{ fontSize:11, color:L.muted, marginTop:4 }}>Ready for the Master Exam.</div>
+              <div style={{ display:"flex", justifyContent:"center", marginBottom:6 }}><TrophyIcon color={L.gold} size={rs(28)}/></div>
+              <div style={{ fontSize:rs(13), fontWeight:700, color:L.green }}>All quizzes above 80%!</div>
+              <div style={{ fontSize:rs(11), color:L.muted, marginTop:4 }}>Ready for the Master Exam.</div>
             </div>
           )}
         </div>
       </div>
-      <div style={{ height:15 }}/>
+      <div style={{ height: rs(15) }}/>
     </>
   ));
+  }
 
   // ── MASTER EXAM (landing) ────────────────────────────────────
-  if (view === "master") return shell("master", (
+  if (view === "master") {
+    return shell("master", (
     <>
-      <div style={{ padding:"6px 20px 4px" }}>
-        <h1 style={{ fontSize:20, fontWeight:700, color:L.ink }}>Master Exam</h1>
-        <p style={{ fontSize:11, color:L.muted, marginTop:3 }}>Simulate the real board exam experience</p>
+      <div style={{ padding: `${rs(6)}px ${rs(20)}px ${rs(4)}px` }}>
+        <h1 style={{ fontSize: rs(20), fontWeight:700, color:L.ink }}>Master Exam</h1>
+        <p style={{ fontSize: rs(11), color:L.muted, marginTop:3 }}>Simulate the real board exam experience</p>
       </div>
 
-      <div style={{ margin:"15px 20px 0" }}>
-        <div style={{ background:L.navy, borderRadius:22, padding:20, color:"#fff" }}>
-          <div style={{ fontSize:14.5, fontWeight:600, marginBottom:16 }}>Exam Readiness</div>
-          <div style={{ display:"flex", alignItems:"center", gap:18 }}>
-            <div style={{ width:100, height:100, borderRadius:"50%", flex:"none",
+      <MascotStrip message="Ready when you are — you've got this!" scale={S}/>
+
+      <div style={{ margin: `${rs(15)}px ${rs(20)}px 0` }}>
+        <div className="mra-hover-lift" style={{ background:L.navy, borderRadius:rs(22), padding: rs(20), color:"#fff" }}>
+          <div style={{ fontSize: rs(14.5), fontWeight:600, marginBottom: rs(16) }}>Exam Readiness</div>
+          <div style={{ display:"flex", alignItems:"center", gap: rs(18) }}>
+            <div style={{ width: rs(100), height: rs(100), borderRadius:"50%", flex:"none",
               background:`conic-gradient(${L.gold} 0deg ${totalMastery()*3.6}deg, rgba(255,255,255,.14) ${totalMastery()*3.6}deg 360deg)`,
               display:"flex", alignItems:"center", justifyContent:"center", position:"relative" }}>
-              <div style={{ position:"absolute", inset:11, borderRadius:"50%", background:L.navy }}/>
+              <div style={{ position:"absolute", inset: rs(11), borderRadius:"50%", background:L.navy }}/>
               <div style={{ position:"relative", textAlign:"center" }}>
-                <div style={{ fontSize:20, fontWeight:700 }}>{totalMastery()}%</div>
-                <div style={{ fontSize:8.5, color:"#c9d2e2", marginTop:1 }}>Ready</div>
+                <div style={{ fontSize: rs(20), fontWeight:700 }}>{totalMastery()}%</div>
+                <div style={{ fontSize: rs(8.5), color:"#c9d2e2", marginTop:1 }}>Ready</div>
               </div>
             </div>
-            <div style={{ flex:1, fontSize:10.5, color:"#c9d2e2", lineHeight:1.6 }}>
+            <div style={{ flex:1, fontSize: rs(10.5), color:"#c9d2e2", lineHeight:1.6 }}>
               {completedCount === 0
                 ? "Start reviewing to build your readiness score before taking the full 350-question exam."
                 : avgOf(genSubset) < avgOf(profSubset)
@@ -1535,86 +1687,91 @@ export default function MasterReviewAcademy() {
         </div>
       </div>
 
-      <div style={{ margin:"15px 20px 0" }}>
-        <div onClick={()=>{setMaster350(buildMaster350());setActiveQ("master");}}
+      <div style={{ margin: `${rs(15)}px ${rs(20)}px 0` }}>
+        <div onClick={()=>{setMaster350(buildMaster350());setActiveQ("master");}} className="mra-hover-btn"
           style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:8, background:L.gold, color:L.navy,
-            fontSize:13, fontWeight:700, padding:14, borderRadius:16, cursor:"pointer" }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 3l14 9-14 9V3z" fill={L.navy}/></svg>
+            fontSize: rs(13), fontWeight:700, padding: rs(14), borderRadius:rs(16), cursor:"pointer" }}>
+          <svg width={rs(16)} height={rs(16)} viewBox="0 0 24 24" fill="none"><path d="M5 3l14 9-14 9V3z" fill={L.navy}/></svg>
           Take Master Exam — 350Q
         </div>
       </div>
 
-      <div style={{ margin:"12px 20px 0" }}>
-        <div style={{ fontSize:13.5, fontWeight:600, color:L.ink, marginBottom:10 }}>Practice Exams</div>
-        <div style={{ background:"#fff", border:`1px solid ${L.line}`, borderRadius:22 }}>
+      <div style={{ margin: `${rs(12)}px ${rs(20)}px 0` }}>
+        <div style={{ fontSize: rs(13.5), fontWeight:600, color:L.ink, marginBottom:10 }}>Practice Exams</div>
+        <div className="mra-hover-lift" style={{ background:"#fff", border:`1px solid ${L.line}`, borderRadius:rs(22) }}>
           {[
-            { name:"Full Mock Exam", meta:"350 items · All subjects", icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="18" rx="2" stroke={L.blue} strokeWidth="1.6"/><path d="M8 8h8M8 12h8M8 16h5" stroke={L.blue} strokeWidth="1.6" strokeLinecap="round"/></svg>, tint:L.blueTint, action:()=>{setMaster350(buildMaster350());setActiveQ("master");} },
-            { name:"Professional Education Set", meta:`${profSubset.reduce((a,q)=>a+q.questions.length,0)} items · 3 quizzes`, icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke={L.orange} strokeWidth="1.6"/><path d="M12 7v5l4 2" stroke={L.orange} strokeWidth="1.6" strokeLinecap="round"/></svg>, tint:L.orangeTint, action:()=>{setFilterS("all-prof");setView("library");} },
-            { name:"General Education Set", meta:`${genSubset.reduce((a,q)=>a+q.questions.length,0)} items · 9 quizzes`, icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4L12 2z" stroke={L.purple} strokeWidth="1.4" strokeLinejoin="round"/></svg>, tint:L.purpleTint, action:()=>{setFilterS("all-gened");setView("library");} },
+            { name:"Full Mock Exam", meta:"350 items · All subjects", icon:<svg width={rs(20)} height={rs(20)} viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="18" rx="2" stroke={L.blue} strokeWidth="1.6"/><path d="M8 8h8M8 12h8M8 16h5" stroke={L.blue} strokeWidth="1.6" strokeLinecap="round"/></svg>, tint:L.blueTint, action:()=>{setMaster350(buildMaster350());setActiveQ("master");} },
+            { name:"Professional Education Set", meta:`${profSubset.reduce((a,q)=>a+q.questions.length,0)} items · 3 quizzes`, icon:<svg width={rs(20)} height={rs(20)} viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke={L.orange} strokeWidth="1.6"/><path d="M12 7v5l4 2" stroke={L.orange} strokeWidth="1.6" strokeLinecap="round"/></svg>, tint:L.orangeTint, action:()=>{setFilterS("all-prof");setView("library");} },
+            { name:"General Education Set", meta:`${genSubset.reduce((a,q)=>a+q.questions.length,0)} items · 9 quizzes`, icon:<svg width={rs(20)} height={rs(20)} viewBox="0 0 24 24" fill="none"><path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4L12 2z" stroke={L.purple} strokeWidth="1.4" strokeLinejoin="round"/></svg>, tint:L.purpleTint, action:()=>{setFilterS("all-gened");setView("library");} },
           ].map((e,i)=>(
-            <div key={e.name} style={{ display:"flex", alignItems:"center", gap:12, padding:14, borderTop: i>0?`1px solid ${L.line}`:"none" }}>
-              <div style={{ width:44, height:44, borderRadius:12, flex:"none", background:e.tint, display:"flex", alignItems:"center", justifyContent:"center" }}>{e.icon}</div>
+            <div key={e.name} style={{ display:"flex", alignItems:"center", gap: rs(12), padding: rs(14), borderTop: i>0?`1px solid ${L.line}`:"none" }}>
+              <div style={{ width: rs(44), height: rs(44), borderRadius:12, flex:"none", background:e.tint, display:"flex", alignItems:"center", justifyContent:"center" }}>{e.icon}</div>
               <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ fontSize:12.5, fontWeight:600, color:L.ink }}>{e.name}</div>
-                <div style={{ fontSize:9.5, color:L.muted, marginTop:3 }}>{e.meta}</div>
+                <div style={{ fontSize: rs(12.5), fontWeight:600, color:L.ink }}>{e.name}</div>
+                <div style={{ fontSize: rs(9.5), color:L.muted, marginTop:3 }}>{e.meta}</div>
               </div>
-              <div onClick={e.action} style={{ flex:"none", background:L.navyNav, color:"#fff", fontSize:10, fontWeight:600,
-                padding:"8px 13px", borderRadius:999, cursor:"pointer" }}>Start</div>
+              <div onClick={e.action} className="mra-hover-btn" style={{ flex:"none", background:L.navyNav, color:"#fff", fontSize: rs(10), fontWeight:600,
+                padding: `${rs(8)}px ${rs(13)}px`, borderRadius:999, cursor:"pointer" }}>Start</div>
             </div>
           ))}
         </div>
       </div>
-      <div style={{ height:15 }}/>
+      <div style={{ height: rs(15) }}/>
     </>
   ));
+  }
 
   // ── PROFILE ───────────────────────────────────────────────────
-  if (view === "profile") return shell("profile", (
+  if (view === "profile") {
+    return shell("profile", (
     <>
-      <div style={{ display:"flex", flexDirection:"column", alignItems:"center", padding:"8px 20px 4px", textAlign:"center" }}>
-        <div style={{ width:76, height:76, borderRadius:"50%", background:L.navy, display:"flex", alignItems:"center",
-          justifyContent:"center", color:L.gold, fontSize:24, fontWeight:700, border:`3px solid ${L.gold}` }}>
+      <div style={{ display:"flex", flexDirection:"column", alignItems:"center", padding: `${rs(8)}px ${rs(20)}px ${rs(4)}px`, textAlign:"center" }}>
+        <div style={{ width: rs(76), height: rs(76), borderRadius:"50%", background:L.navy, display:"flex", alignItems:"center",
+          justifyContent:"center", color:L.gold, fontSize: rs(24), fontWeight:700, border:`3px solid ${L.gold}` }}>
           {(user||"?").slice(0,2).toUpperCase()}
         </div>
-        <h2 style={{ fontSize:16, fontWeight:700, color:L.ink, marginTop:10 }}>{user}</h2>
-        <p style={{ fontSize:10.5, color:L.muted, marginTop:2 }}>{isAdmin ? "Administrator" : "Future Teacher"}</p>
+        <h2 style={{ fontSize: rs(16), fontWeight:700, color:L.ink, marginTop:10 }}>{user}</h2>
+        <p style={{ fontSize: rs(10.5), color:L.muted, marginTop:2 }}>{isAdmin ? "Administrator" : "Future Teacher"}</p>
       </div>
 
-      <div style={{ display:"flex", margin:"14px 20px 0", background:"#fff", border:`1px solid ${L.line}`, borderRadius:16, overflow:"hidden" }}>
+      <MascotStrip message="Great to see you here again!" scale={S}/>
+
+      <div style={{ display:"flex", margin: `${rs(14)}px ${rs(20)}px 0`, background:"#fff", border:`1px solid ${L.line}`, borderRadius:16, overflow:"hidden" }}>
         {[
           { n:streak, l:"Day Streak" },
           { n:completedCount, l:"Quizzes Done" },
           { n:totalMastery()+"%", l:"Mastery" },
         ].map((s,i)=>(
-          <div key={s.l} style={{ flex:1, textAlign:"center", padding:"12px 4px", borderLeft: i>0?`1px solid ${L.line}`:"none" }}>
-            <div style={{ fontSize:15, fontWeight:700, color:L.ink }}>{s.n}</div>
-            <div style={{ fontSize:8.5, color:L.muted, marginTop:2 }}>{s.l}</div>
+          <div key={s.l} style={{ flex:1, textAlign:"center", padding: `${rs(12)}px ${rs(4)}px`, borderLeft: i>0?`1px solid ${L.line}`:"none" }}>
+            <div style={{ fontSize: rs(15), fontWeight:700, color:L.ink }}>{s.n}</div>
+            <div style={{ fontSize: rs(8.5), color:L.muted, marginTop:2 }}>{s.l}</div>
           </div>
         ))}
       </div>
 
-      <div style={{ margin:"15px 20px 0" }}>
-        <div style={{ background:"#fff", border:`1px solid ${L.line}`, borderRadius:16 }}>
+      <div style={{ margin: `${rs(15)}px ${rs(20)}px 0` }}>
+        <div className="mra-hover-lift" style={{ background:"#fff", border:`1px solid ${L.line}`, borderRadius:16 }}>
           {[
             { label:"Library", action:()=>setView("library") },
             { label:"Dashboard", action:()=>setView("dashboard") },
             ...(isAdmin ? [{ label:"Admin Panel", action:()=>setView("admin"), color:L.blue }] : []),
           ].map((m,i)=>(
-            <div key={m.label} onClick={m.action} style={{ display:"flex", alignItems:"center", gap:12, padding:"13px 14px",
+            <div key={m.label} onClick={m.action} style={{ display:"flex", alignItems:"center", gap:12, padding: `${rs(13)}px ${rs(14)}px`,
               cursor:"pointer", borderTop: i>0?`1px solid ${L.line}`:"none" }}>
-              <div style={{ flex:1, fontSize:11.5, fontWeight:600, color:m.color||L.ink }}>{m.label}</div>
+              <div style={{ flex:1, fontSize: rs(11.5), fontWeight:600, color:m.color||L.ink }}>{m.label}</div>
               <svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke={L.muted} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </div>
           ))}
-          <div onClick={handleLogout} style={{ display:"flex", alignItems:"center", gap:12, padding:"13px 14px",
+          <div onClick={handleLogout} style={{ display:"flex", alignItems:"center", gap:12, padding: `${rs(13)}px ${rs(14)}px`,
             cursor:"pointer", borderTop:`1px solid ${L.line}` }}>
-            <div style={{ flex:1, fontSize:11.5, fontWeight:600, color:"#E5484D" }}>Log Out</div>
+            <div style={{ flex:1, fontSize: rs(11.5), fontWeight:600, color:"#E5484D" }}>Log Out</div>
           </div>
         </div>
       </div>
-      <div style={{ height:15 }}/>
+      <div style={{ height: rs(15) }}/>
     </>
   ));
+  }
 
   return null;
 }
