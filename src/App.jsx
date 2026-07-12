@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { createClient } from "@supabase/supabase-js";
 import { SCIENCE_50 } from './data/GEN ED/science_50q';
 import { SOCSCI_50 } from './data/GEN ED/socsci_50q';
 import { CONTEMP_50 } from './data/GEN ED/contemp_50q';
@@ -13,54 +14,81 @@ import { ASSESS_50 } from './data/Physical Handouts/assess_50q';
 import { INCLUSIVE_50 } from './data/Physical Handouts/inclusive_50q';
 
 // ═══════════════════════════════════════════════════════════════════
-// SUPABASE CONFIG
+// SUPABASE — real auth + cross-device sync
 // ═══════════════════════════════════════════════════════════════════
 const SUPABASE_URL = "https://ztgtrvodalesxqbmrrqd.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp0Z3Rydm9kYWxlc3hxYm1ycnFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0MjU3MDgsImV4cCI6MjA5NzAwMTcwOH0.k7mQyT1gmnSG9pnycjUj7f6xcwTCKgHErOQUHGV5gFg";
 
-async function sbFetch(path, opts = {}) {
-  try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-      ...opts,
-      headers: {
-        "apikey": SUPABASE_KEY,
-        "Authorization": `Bearer ${SUPABASE_KEY}`,
-        "Content-Type": "application/json",
-        "Prefer": "return=representation",
-        ...(opts.headers || {})
-      }
-    });
-    if (!res.ok) return null;
-    const text = await res.text();
-    return text ? JSON.parse(text) : [];
-  } catch { return null; }
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// The app only ever collects a username/password — Supabase Auth needs an
+// email, so we synthesize one behind the scenes. Users never see it.
+const AUTH_EMAIL_DOMAIN = "mra.local";
+const emailFor = (username) => `${username.trim().toLowerCase()}@${AUTH_EMAIL_DOMAIN}`;
+
+async function signUpUser(username, password) {
+  return supabase.auth.signUp({
+    email: emailFor(username),
+    password,
+    options: { data: { username: username.trim() } }
+  });
 }
 
-async function syncUserToSupabase(username, password) {
+async function signInUser(username, password) {
+  return supabase.auth.signInWithPassword({ email: emailFor(username), password });
+}
+
+// Pulls this account's cloud progress down into local storage so the rest
+// of the app (which reads everything from useStorage/localStorage) sees it
+// immediately, on any device, with no further changes needed.
+async function pullCloudProgress(username) {
   try {
-    await sbFetch("users", {
-      method: "POST",
-      body: JSON.stringify({ username, password })
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (!authUser) return;
+    const prefix = `mra_${username}_`;
+
+    const { data: profile } = await supabase.from("profiles")
+      .select("streak_count, streak_last, daily_date, daily_count")
+      .eq("id", authUser.id).maybeSingle();
+    if (profile) {
+      if (profile.streak_count) {
+        localStorage.setItem(prefix + "streak", JSON.stringify({ count: profile.streak_count, last: profile.streak_last }));
+      }
+      if (profile.daily_count) {
+        localStorage.setItem(prefix + "daily", JSON.stringify({ date: profile.daily_date, count: profile.daily_count }));
+      }
+    }
+
+    const { data: rows } = await supabase.from("quiz_progress")
+      .select("quiz_id, score, total, correct, completed_at")
+      .eq("user_id", authUser.id);
+    (rows || []).forEach(r => {
+      localStorage.setItem(prefix + `quiz_${r.quiz_id}`, JSON.stringify({
+        score: r.score, total: r.total, correct: r.correct, date: r.completed_at
+      }));
     });
   } catch {}
 }
 
-async function syncScoreToSupabase(username, quizId, score, total, correct) {
+async function pushQuizScore(quizId, score, total, correct) {
   try {
-    await sbFetch(`quiz_progress?username=eq.${encodeURIComponent(username)}&quiz_id=eq.${encodeURIComponent(quizId)}`, {
-      method: "DELETE"
-    });
-    await sbFetch("quiz_progress", {
-      method: "POST",
-      body: JSON.stringify({
-        username,
-        quiz_id: quizId,
-        score,
-        total,
-        percentage: score,
-        completed_at: new Date().toISOString()
-      })
-    });
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (!authUser) return;
+    await supabase.from("quiz_progress").upsert({
+      user_id: authUser.id,
+      quiz_id: quizId,
+      score, total, correct,
+      percentage: score,
+      completed_at: new Date().toISOString()
+    }, { onConflict: "user_id,quiz_id" });
+  } catch {}
+}
+
+async function pushProfileFields(fields) {
+  try {
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (!authUser) return;
+    await supabase.from("profiles").update(fields).eq("id", authUser.id);
   } catch {}
 }
 
@@ -152,9 +180,14 @@ function useStorage(username) {
   const set = (key, val) => {
     try {
       localStorage.setItem(prefix + key, JSON.stringify(val));
-      if (key.startsWith("quiz_") && username && val?.score !== undefined) {
+      if (!username) return;
+      if (key.startsWith("quiz_") && val?.score !== undefined) {
         const quizId = key.replace("quiz_", "");
-        syncScoreToSupabase(username, quizId, val.score, val.total, val.correct).catch(() => {});
+        pushQuizScore(quizId, val.score, val.total, val.correct).catch(() => {});
+      } else if (key === "streak" && val?.count !== undefined) {
+        pushProfileFields({ streak_count: val.count, streak_last: val.last }).catch(() => {});
+      } else if (key === "daily" && val?.count !== undefined) {
+        pushProfileFields({ daily_date: val.date, daily_count: val.count }).catch(() => {});
       }
     } catch {}
   };
@@ -601,99 +634,161 @@ function SolidBtn({ onClick, children, color="#6366f1", style={} }) {
 // LOGIN / REGISTER
 // ═══════════════════════════════════════════════════════════════════
 function AuthScreen({ onLogin }) {
+  const viewport = useViewport();
+  const wide = viewport !== "phone";
+  const S = viewport === "desktop" ? 1.5 : viewport === "tablet" ? 1.25 : 1;
+  const rs = n => Math.round(n * S);
+
   const [mode, setMode]   = useState("login"); // login | register
   const [user, setUser]   = useState("");
   const [pass, setPass]   = useState("");
   const [pass2, setPass2] = useState("");
   const [err, setErr]     = useState("");
   const [ok, setOk]       = useState("");
+  const [busy, setBusy]   = useState(false);
+  const [welcome] = useState(() => pickMsg("idle"));
 
-  function getUsers() { try { return JSON.parse(localStorage.getItem("mra_users")) || {}; } catch { return {}; } }
-  function saveUsers(u) { localStorage.setItem("mra_users", JSON.stringify(u)); }
-
-  function handleLogin() {
-    setErr(""); setOk("");
-    if (!user.trim() || !pass.trim()) { setErr("Please enter username and password."); return; }
-    if (user.trim() === ADMIN_USER && pass === ADMIN_PASS) { onLogin(user.trim(), true); return; }
-    const users = getUsers();
-    if (!users[user.trim()]) { setErr("Username not found."); return; }
-    if (users[user.trim()].pass !== pass) { setErr("Incorrect password."); return; }
-    onLogin(user.trim(), false);
+  async function ensureAdminCloudAccount() {
+    // Sign in with the admin's real credentials so future syncs have a
+    // session; on first-ever admin login, provision that cloud account.
+    // Explicitly re-signs-in after signUp rather than trusting signUp's own
+    // response to carry a session, since that depends on email-confirmation
+    // timing we don't want this to be fragile against.
+    const first = await signInUser(ADMIN_USER, ADMIN_PASS);
+    if (!first.error) return;
+    await signUpUser(ADMIN_USER, ADMIN_PASS);
+    await signInUser(ADMIN_USER, ADMIN_PASS);
   }
 
-  function handleRegister() {
+  async function handleLogin() {
     setErr(""); setOk("");
-    if (!user.trim() || !pass.trim()) { setErr("All fields are required."); return; }
-    if (user.trim() === ADMIN_USER) { setErr("That username is reserved."); return; }
+    const username = user.trim();
+    if (!username || !pass.trim()) { setErr("Please enter username and password."); return; }
+
+    setBusy(true);
+    try {
+      if (username === ADMIN_USER && pass === ADMIN_PASS) {
+        // Admin must always get in, cloud or no cloud — never let a sync
+        // hiccup block the one account that has to work offline too.
+        try {
+          await ensureAdminCloudAccount();
+          await pullCloudProgress(username);
+        } catch {}
+        onLogin(username, true);
+        return;
+      }
+      const { data, error } = await signInUser(username, pass);
+      if (error) { setErr("Incorrect username or password."); return; }
+      // Use the account's stored username (not whatever casing was just
+      // typed) so the local cache key stays consistent across logins.
+      const canonical = data?.user?.user_metadata?.username || username;
+      await pullCloudProgress(canonical);
+      onLogin(canonical, false);
+    } catch {
+      setErr("Couldn't reach the server. Check your connection and try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleRegister() {
+    setErr(""); setOk("");
+    const username = user.trim();
+    if (!username || !pass.trim()) { setErr("All fields are required."); return; }
+    if (username === ADMIN_USER) { setErr("That username is reserved."); return; }
     if (pass !== pass2) { setErr("Passwords do not match."); return; }
     if (pass.length < 6) { setErr("Password must be at least 6 characters."); return; }
-    const users = getUsers();
-    if (users[user.trim()]) { setErr("Username already taken."); return; }
-    users[user.trim()] = { pass, createdAt: new Date().toISOString() };
-    saveUsers(users);
-    syncUserToSupabase(user.trim(), pass).catch(() => {});
-    setOk("Account created! You can now log in.");
-    setMode("login"); setPass(""); setPass2("");
+
+    setBusy(true);
+    try {
+      const { error } = await signUpUser(username, pass);
+      if (error) {
+        setErr(/registered|exists/i.test(error.message) ? "Username already taken." : error.message);
+        return;
+      }
+      setOk("Account created! You can now sign in.");
+      setMode("login"); setPass(""); setPass2("");
+    } catch {
+      setErr("Couldn't reach the server. Check your connection and try again.");
+    } finally {
+      setBusy(false);
+    }
   }
 
-  const inp = { width:"100%", background:SURF2, border:`1px solid ${BORDER}`, borderRadius:10,
-    padding:"12px 16px", fontSize:14, color:TXT, fontFamily:sf, outline:"none", boxSizing:"border-box" };
+  const inp = {
+    width: "100%", background: "#fff", border: `1px solid ${L.line}`, borderRadius: rs(12),
+    padding: `${rs(12)}px ${rs(16)}px`, fontSize: rs(13.5), color: L.ink, fontFamily: pf,
+    outline: "none", boxSizing: "border-box"
+  };
 
   return (
-    <div style={{ background:BG, minHeight:"100vh", fontFamily:sf, color:TXT,
-      display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}>
-      <div style={{ width:"100%", maxWidth:400 }}>
-        {/* Logo */}
-        <div style={{ textAlign:"center", marginBottom:36 }}>
-          <div style={{ width:52, height:52, borderRadius:14, background:"linear-gradient(135deg,#6366f1,#a855f7)",
-            display:"flex", alignItems:"center", justifyContent:"center", fontSize:24,
-            margin:"0 auto 14px" }}>🏛</div>
-          <div style={{ fontSize:22, fontWeight:900, letterSpacing:"-0.5px" }}>Master Review Academy</div>
-          <div style={{ fontSize:13, color:TXT2, marginTop:4 }}>LET Board Examination Review</div>
+    <div style={{ background: L.bg, minHeight: "100vh", fontFamily: pf, display: "flex",
+      alignItems: "center", justifyContent: "center", padding: rs(20) }}>
+      <div style={{ width: "100%", maxWidth: wide ? 440 * S : 380 }}>
+
+        <div className="mra-hover-lift" style={{ background: L.cream, borderRadius: rs(22),
+          padding: `${rs(24)}px ${rs(24)}px 0`, display: "flex", alignItems: "flex-end",
+          gap: 6, overflow: "hidden", marginBottom: rs(18), minHeight: rs(160) }}>
+          <div style={{ flex: 1, minWidth: 0, paddingBottom: rs(20) }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+              <svg width={rs(22)} height={rs(19)} viewBox="0 0 26 22"><path d="M13 0L26 5.5L13 11L0 5.5L13 0Z" fill={L.navy}/><path d="M6 8V14C6 14 9 17 13 17C17 17 20 14 20 14V8L13 11L6 8Z" fill={L.navy}/></svg>
+              <span style={{ fontSize: rs(11), fontWeight: 700, letterSpacing: ".4px", color: L.navy, textTransform: "uppercase" }}>Master Review Academy</span>
+            </div>
+            <h1 style={{ fontSize: rs(19), fontWeight: 700, color: L.ink, lineHeight: 1.28, margin: 0 }}>
+              Hi, I'm Professor Maya!
+            </h1>
+            <p style={{ fontSize: rs(11.5), color: "#8a7f6f", marginTop: 6, lineHeight: 1.5 }}>{welcome}</p>
+          </div>
+          <div style={{ flex: "none", marginRight: rs(-6) }}>
+            <Mascot pose="idle" size={rs(120)}/>
+          </div>
         </div>
 
-        <div style={{ background:SURF, borderRadius:20, padding:28, border:`1px solid ${BORDER}` }}>
-          {/* Tab */}
-          <div style={{ display:"flex", background:SURF2, borderRadius:10, padding:4, marginBottom:24, gap:4 }}>
-            {["login","register"].map(m => (
-              <button key={m} onClick={() => { setMode(m); setErr(""); setOk(""); }}
-                style={{ flex:1, background:mode===m?"#6366f1":"none", color:mode===m?"#fff":TXT2,
-                  border:"none", borderRadius:8, padding:"9px", fontSize:13, fontWeight:600,
-                  cursor:"pointer", fontFamily:sf, textTransform:"capitalize", transition:"all .2s" }}>
+        <div style={{ background: "#fff", borderRadius: rs(22), padding: rs(24),
+          border: `1px solid ${L.line}`, boxShadow: "0 3px 14px -6px rgba(14,35,72,.12)" }}>
+          <div style={{ display: "flex", background: L.bg, borderRadius: rs(11), padding: 4, marginBottom: rs(20), gap: 4 }}>
+            {["login", "register"].map(m => (
+              <button key={m} onClick={() => { setMode(m); setErr(""); setOk(""); }} disabled={busy}
+                style={{ flex: 1, background: mode === m ? L.navy : "none", color: mode === m ? "#fff" : L.muted,
+                  border: "none", borderRadius: rs(8), padding: rs(9), fontSize: rs(12.5), fontWeight: 600,
+                  cursor: busy ? "default" : "pointer", fontFamily: pf, transition: "all .2s" }}>
                 {m === "login" ? "Sign In" : "Create Account"}
               </button>
             ))}
           </div>
 
-          <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: rs(12) }}>
             <div>
-              <label style={{ fontSize:11, color:TXT2, letterSpacing:"0.5px", textTransform:"uppercase", display:"block", marginBottom:6 }}>Username</label>
-              <input value={user} onChange={e=>setUser(e.target.value)} placeholder="Enter username"
-                style={inp} onKeyDown={e=>e.key==="Enter"&&(mode==="login"?handleLogin():null)} />
+              <label style={{ fontSize: rs(10.5), color: L.muted, letterSpacing: ".4px", textTransform: "uppercase", display: "block", marginBottom: 6, fontWeight: 600 }}>Username</label>
+              <input value={user} onChange={e => setUser(e.target.value)} placeholder="Enter username" disabled={busy}
+                style={inp} onKeyDown={e => e.key === "Enter" && (mode === "login" ? handleLogin() : null)} />
             </div>
             <div>
-              <label style={{ fontSize:11, color:TXT2, letterSpacing:"0.5px", textTransform:"uppercase", display:"block", marginBottom:6 }}>Password</label>
-              <input type="password" value={pass} onChange={e=>setPass(e.target.value)} placeholder="Enter password"
-                style={inp} onKeyDown={e=>e.key==="Enter"&&(mode==="login"?handleLogin():null)} />
+              <label style={{ fontSize: rs(10.5), color: L.muted, letterSpacing: ".4px", textTransform: "uppercase", display: "block", marginBottom: 6, fontWeight: 600 }}>Password</label>
+              <input type="password" value={pass} onChange={e => setPass(e.target.value)} placeholder="Enter password" disabled={busy}
+                style={inp} onKeyDown={e => e.key === "Enter" && (mode === "login" ? handleLogin() : null)} />
             </div>
             {mode === "register" && (
               <div>
-                <label style={{ fontSize:11, color:TXT2, letterSpacing:"0.5px", textTransform:"uppercase", display:"block", marginBottom:6 }}>Confirm Password</label>
-                <input type="password" value={pass2} onChange={e=>setPass2(e.target.value)} placeholder="Confirm password"
-                  style={inp} onKeyDown={e=>e.key==="Enter"&&handleRegister()} />
+                <label style={{ fontSize: rs(10.5), color: L.muted, letterSpacing: ".4px", textTransform: "uppercase", display: "block", marginBottom: 6, fontWeight: 600 }}>Confirm Password</label>
+                <input type="password" value={pass2} onChange={e => setPass2(e.target.value)} placeholder="Confirm password" disabled={busy}
+                  style={inp} onKeyDown={e => e.key === "Enter" && handleRegister()} />
               </div>
             )}
 
-            {err && <div style={{ background:"#2a0a0a", border:"1px solid #ef4444", borderRadius:8, padding:"10px 14px", fontSize:13, color:"#f87171" }}>{err}</div>}
-            {ok  && <div style={{ background:"#022c22", border:"1px solid #22c55e", borderRadius:8, padding:"10px 14px", fontSize:13, color:"#4ade80" }}>{ok}</div>}
+            {err && <div style={{ background: "#FBEAE8", border: "1px solid #F1B3AC", borderRadius: rs(10), padding: `${rs(10)}px ${rs(14)}px`, fontSize: rs(12), color: "#B3392E" }}>{err}</div>}
+            {ok  && <div style={{ background: L.greenTint, border: `1px solid ${L.green}55`, borderRadius: rs(10), padding: `${rs(10)}px ${rs(14)}px`, fontSize: rs(12), color: L.green }}>{ok}</div>}
 
-            <SolidBtn onClick={mode==="login"?handleLogin:handleRegister} style={{ width:"100%", marginTop:4, padding:"13px" }}>
-              {mode === "login" ? "Sign In →" : "Create Account"}
-            </SolidBtn>
+            <div onClick={busy ? undefined : (mode === "login" ? handleLogin : handleRegister)} className="mra-hover-btn"
+              style={{ width: "100%", marginTop: 4, padding: rs(13), textAlign: "center", background: busy ? L.muted : L.navy,
+                color: "#fff", borderRadius: 999, fontSize: rs(13.5), fontWeight: 700, cursor: busy ? "default" : "pointer",
+                boxSizing: "border-box" }}>
+              {busy ? "Please wait…" : mode === "login" ? "Sign In →" : "Create Account"}
+            </div>
           </div>
         </div>
-        <div style={{ textAlign:"center", marginTop:16, fontSize:12, color:TXT2 }}>
-          Your progress is saved locally on this device.
+        <div style={{ textAlign: "center", marginTop: rs(16), fontSize: rs(11), color: L.muted }}>
+          Your progress syncs automatically to every device you sign in on.
         </div>
       </div>
     </div>
@@ -706,17 +801,30 @@ function AuthScreen({ onLogin }) {
 function AdminPanel({ onBack }) {
   const [tab, setTab] = useState("ratings"); // ratings | users
   const [search, setSearch] = useState("");
+  const [users, setUsers] = useState({});
+  const [scores, setScores] = useState({});
+  const [loading, setLoading] = useState(true);
 
-  function getUsers() { try { return JSON.parse(localStorage.getItem("mra_users")) || {}; } catch { return {}; } }
+  useEffect(() => {
+    (async () => {
+      const [{ data: profiles }, { data: progress }] = await Promise.all([
+        supabase.from("profiles").select("id, username, created_at").order("created_at"),
+        supabase.from("quiz_progress").select("user_id, quiz_id, score, total, correct"),
+      ]);
+      const usernameById = {};
+      const u = {};
+      (profiles || []).forEach(p => { usernameById[p.id] = p.username; u[p.username] = { createdAt: p.created_at }; });
+      const s = {};
+      (progress || []).forEach(r => {
+        const username = usernameById[r.user_id];
+        if (username) s[`${username}|${r.quiz_id}`] = { score: r.score, total: r.total, correct: r.correct };
+      });
+      setUsers(u); setScores(s); setLoading(false);
+    })();
+  }, []);
 
-  function getUserScore(username, quizId) {
-    try {
-      const val = localStorage.getItem(`mra_${username}_quiz_${quizId}`);
-      return val ? JSON.parse(val) : null;
-    } catch { return null; }
-  }
+  function getUserScore(username, quizId) { return scores[`${username}|${quizId}`] || null; }
 
-  const users = getUsers();
   const userList = Object.keys(users).filter(u =>
     !search || u.toLowerCase().includes(search.toLowerCase())
   );
@@ -761,10 +869,11 @@ function AdminPanel({ onBack }) {
         </div>
 
         {/* Search */}
-        <div style={{ marginBottom:20 }}>
+        <div style={{ marginBottom:20, display:"flex", alignItems:"center", gap:12 }}>
           <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search users..."
             style={{ background:SURF, border:`1px solid ${BORDER}`, borderRadius:10, padding:"10px 16px",
               fontSize:13, color:TXT, fontFamily:sf, outline:"none", width:280, boxSizing:"border-box" }} />
+          {loading && <span style={{ fontSize:12, color:TXT2 }}>Loading from the cloud…</span>}
         </div>
 
         {/* Summary cards */}
@@ -1255,6 +1364,7 @@ export default function MasterReviewAcademy() {
   function handleLogout() {
     setUser(null); setIsAdmin(false); setView("home"); setActiveQ(null);
     localStorage.removeItem("mra_session");
+    supabase.auth.signOut().catch(() => {});
   }
 
   function getData(id) { return storage.get(`quiz_${id}`); }
