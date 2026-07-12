@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { SCIENCE_50 } from './data/GEN ED/science_50q';
 import { SOCSCI_50 } from './data/GEN ED/socsci_50q';
@@ -89,6 +89,44 @@ async function pushProfileFields(fields) {
     const { data: { user: authUser } } = await supabase.auth.getUser();
     if (!authUser) return;
     await supabase.from("profiles").update(fields).eq("id", authUser.id);
+  } catch {}
+}
+
+// In-progress (not yet completed) quiz attempts, so a "answer 1 question,
+// exit, open on another device" flow resumes at the same question instead
+// of only completed scores being portable. order stays fixed for the life
+// of an attempt, so it's written once; only the small idx/correct/wrong/
+// missed fields need to go out after every answer.
+async function pushQuizSession(quizId, order, idx, correct, wrong, missed) {
+  try {
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (!authUser) return;
+    await supabase.from("quiz_sessions").upsert({
+      user_id: authUser.id,
+      quiz_id: quizId,
+      order_indices: order,
+      idx, correct, wrong, missed,
+      updated_at: new Date().toISOString()
+    }, { onConflict: "user_id,quiz_id" });
+  } catch {}
+}
+
+async function pullQuizSession(quizId) {
+  try {
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (!authUser) return null;
+    const { data } = await supabase.from("quiz_sessions")
+      .select("order_indices, idx, correct, wrong, missed")
+      .eq("user_id", authUser.id).eq("quiz_id", quizId).maybeSingle();
+    return data || null;
+  } catch { return null; }
+}
+
+async function deleteQuizSession(quizId) {
+  try {
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (!authUser) return;
+    await supabase.from("quiz_sessions").delete().eq("user_id", authUser.id).eq("quiz_id", quizId);
   } catch {}
 }
 
@@ -1072,7 +1110,7 @@ function QuizEngine({ rawQuestions, title, quizId, accentColor, onExit, username
   const saved = storage.get(progressKey);
   const validSaved = !!(saved && Array.isArray(saved.questions) && saved.questions.length === rawQuestions.length && saved.idx < saved.questions.length);
 
-  const [questions]  = useState(() => validSaved ? saved.questions : buildOrder(rawQuestions));
+  const [questions, setQuestions] = useState(() => validSaved ? saved.questions : buildOrder(rawQuestions));
   const [idx,   setIdx]   = useState(() => validSaved ? saved.idx : 0);
   const [sel,   setSel]   = useState(null);
   const [shown, setShown] = useState(false);
@@ -1090,12 +1128,42 @@ function QuizEngine({ rawQuestions, title, quizId, accentColor, onExit, username
   const acc      = answered > 0 ? Math.round(correct / answered * 100) : 0;
   const prog     = Math.round(idx / total * 100);
   const every    = total >= 150 ? 50 : total >= 100 ? 25 : 20;
+  const order    = useMemo(() => questions.map(qq => rawQuestions.indexOf(qq)), [questions]); // eslint-disable-line
+  // Gates cloud pushes until the initial cloud-progress check below has run,
+  // so a fresh-mount push can never race ahead of it and clobber further
+  // progress that was made on another device.
+  const [cloudChecked, setCloudChecked] = useState(!username);
 
   // Save progress after every answered question so exiting mid-quiz resumes
-  // where you left off instead of restarting at Question 1.
+  // where you left off instead of restarting at Question 1 — locally and,
+  // for a signed-in user, on any device they next open this same quiz on.
   useEffect(() => {
     storage.set(progressKey, { questions, idx, correct, wrong, missed });
-  }, [idx, correct, wrong, missed]); // eslint-disable-line
+    if (username && cloudChecked) pushQuizSession(quizId, order, idx, correct, wrong, missed).catch(() => {});
+  }, [idx, correct, wrong, missed, cloudChecked]); // eslint-disable-line
+
+  // On open, check whether another device got further into this exact quiz
+  // attempt than this one has locally, and if so pick up from there.
+  useEffect(() => {
+    if (!username) return;
+    (async () => {
+      try {
+        const cloud = await pullQuizSession(quizId);
+        if (!cloud || !Array.isArray(cloud.order_indices) || cloud.order_indices.length !== rawQuestions.length) return;
+        const localIdx = validSaved ? saved.idx : -1;
+        if (cloud.idx <= localIdx) return;
+        const cloudQuestions = cloud.order_indices.map(i => rawQuestions[i]);
+        if (cloudQuestions.some(qq => !qq)) return;
+        setQuestions(cloudQuestions);
+        setIdx(cloud.idx);
+        setCorrect(cloud.correct);
+        setWrong(cloud.wrong);
+        setMissed(cloud.missed || []);
+      } finally {
+        setCloudChecked(true);
+      }
+    })();
+  }, []); // eslint-disable-line
 
   function submit() {
     if (!sel || shown) return;
@@ -1114,6 +1182,7 @@ function QuizEngine({ rawQuestions, title, quizId, accentColor, onExit, username
       const score = Math.round(fc / total * 100);
       storage.set(`quiz_${quizId}`, { score, correct: fc, total, date: new Date().toISOString() });
       storage.set(progressKey, null);
+      if (username) deleteQuizSession(quizId).catch(() => {});
       setPhase("results");
       return;
     }
