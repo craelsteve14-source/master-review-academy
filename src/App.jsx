@@ -1201,6 +1201,17 @@ function QuizEngine({ rawQuestions, title, quizId, accentColor, onExit, username
   const g  = getRating(Math.round(correct / total * 100));
   const weakTopics = [...new Set(missed.map(w => getT(w)))];
 
+  // Briefly block on the cloud-progress check when the quiz first opens, so
+  // a resumed question replaces this screen instead of flashing in after —
+  // easy to miss and easy to mistake for sync not having worked at all.
+  if (!cloudChecked && phase === "quiz" && idx === 0 && correct === 0 && wrong === 0) return (
+    <div style={{ background:L.bg, minHeight:"100vh", fontFamily:pf, color:L.ink,
+      display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:14 }}>
+      <Mascot pose="idle" size={100}/>
+      <div style={{ fontSize:13, color:L.muted }}>Checking for progress on other devices…</div>
+    </div>
+  );
+
   // Checkpoint
   if (phase === "checkpoint" && ckpt) return (
     <div style={{ background:L.bg, minHeight:"100vh", fontFamily:pf, color:L.ink }}>
