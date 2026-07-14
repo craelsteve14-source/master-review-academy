@@ -38,9 +38,13 @@ async function signInUser(username, password) {
   return supabase.auth.signInWithPassword({ email: emailFor(username), password });
 }
 
-// Pulls this account's cloud progress down into local storage so the rest
-// of the app (which reads everything from useStorage/localStorage) sees it
-// immediately, on any device, with no further changes needed.
+// Reconciles this account's quiz history between this device and the cloud,
+// in both directions, so two devices converge instead of the cloud only
+// ever overwriting local. A device that already had scores saved locally
+// before this sync system existed (or made offline) has them pushed up;
+// a device that's behind gets the cloud's newer copy pulled down; when
+// both sides have the same quiz, whichever was completed more recently
+// wins and is written back to the other side.
 async function pullCloudProgress(username) {
   try {
     const { data: { user: authUser } } = await supabase.auth.getUser();
@@ -62,15 +66,34 @@ async function pullCloudProgress(username) {
     const { data: rows } = await supabase.from("quiz_progress")
       .select("quiz_id, score, total, correct, completed_at")
       .eq("user_id", authUser.id);
-    (rows || []).forEach(r => {
-      localStorage.setItem(prefix + `quiz_${r.quiz_id}`, JSON.stringify({
-        score: r.score, total: r.total, correct: r.correct, date: r.completed_at
-      }));
-    });
+    const cloudByQuiz = {};
+    (rows || []).forEach(r => { cloudByQuiz[r.quiz_id] = r; });
+
+    const quizIds = [...QUIZ_REGISTRY.map(q => q.id), "master"];
+    for (const id of quizIds) {
+      const key = prefix + `quiz_${id}`;
+      let local = null;
+      try { local = JSON.parse(localStorage.getItem(key)); } catch {}
+      const cloud = cloudByQuiz[id];
+
+      if (cloud && !local) {
+        localStorage.setItem(key, JSON.stringify({ score: cloud.score, total: cloud.total, correct: cloud.correct, date: cloud.completed_at }));
+      } else if (local && !cloud) {
+        await pushQuizScore(id, local.score, local.total, local.correct, local.date);
+      } else if (local && cloud) {
+        const localTime = new Date(local.date || 0).getTime();
+        const cloudTime = new Date(cloud.completed_at || 0).getTime();
+        if (cloudTime > localTime) {
+          localStorage.setItem(key, JSON.stringify({ score: cloud.score, total: cloud.total, correct: cloud.correct, date: cloud.completed_at }));
+        } else if (localTime > cloudTime) {
+          await pushQuizScore(id, local.score, local.total, local.correct, local.date);
+        }
+      }
+    }
   } catch {}
 }
 
-async function pushQuizScore(quizId, score, total, correct) {
+async function pushQuizScore(quizId, score, total, correct, completedAt) {
   try {
     const { data: { user: authUser } } = await supabase.auth.getUser();
     if (!authUser) return;
@@ -79,7 +102,7 @@ async function pushQuizScore(quizId, score, total, correct) {
       quiz_id: quizId,
       score, total, correct,
       percentage: score,
-      completed_at: new Date().toISOString()
+      completed_at: completedAt || new Date().toISOString()
     }, { onConflict: "user_id,quiz_id" });
   } catch {}
 }
@@ -221,7 +244,7 @@ function useStorage(username) {
       if (!username) return;
       if (key.startsWith("quiz_") && val?.score !== undefined) {
         const quizId = key.replace("quiz_", "");
-        pushQuizScore(quizId, val.score, val.total, val.correct).catch(() => {});
+        pushQuizScore(quizId, val.score, val.total, val.correct, val.date).catch(() => {});
       } else if (key === "streak" && val?.count !== undefined) {
         pushProfileFields({ streak_count: val.count, streak_last: val.last }).catch(() => {});
       } else if (key === "daily" && val?.count !== undefined) {
@@ -1435,8 +1458,20 @@ export default function MasterReviewAcademy() {
 
   const storage = useStorage(user);
   const [streak, setStreak] = useState(0);
+  const [syncNonce, setSyncNonce] = useState(0);
 
   useEffect(() => { if (user) setStreak(bumpStreak(storage)); }, [user]);
+
+  // Re-reconcile with the cloud whenever the app opens with an already
+  // signed-in session (not just on a fresh login), so a device that was
+  // logged in before this sync system existed - or before a merge with
+  // another device happened - still catches up without a manual re-login.
+  // syncNonce forces a re-render afterward since local storage reads here
+  // aren't otherwise reactive.
+  useEffect(() => {
+    if (!user) return;
+    pullCloudProgress(user).then(() => setSyncNonce(n => n + 1)).catch(() => {});
+  }, [user]); // eslint-disable-line
 
   function handleLogin(username, admin) {
     setUser(username); setIsAdmin(admin); setView(admin ? "dashboard" : "home");
