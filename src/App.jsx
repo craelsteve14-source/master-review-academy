@@ -694,6 +694,32 @@ function SolidBtn({ onClick, children, color="#6366f1", style={} }) {
 // ═══════════════════════════════════════════════════════════════════
 // LOGIN / REGISTER
 // ═══════════════════════════════════════════════════════════════════
+function SplashScreen() {
+  const size = 168;
+  const r = 74;
+  const c = 2 * Math.PI * r;
+  return (
+    <div style={{ background: L.bg, minHeight: "100vh", display: "flex", flexDirection: "column",
+                  alignItems: "center", justifyContent: "center", fontFamily: pf }}>
+      <div style={{ position: "relative", width: size, height: size }}>
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}
+             style={{ position: "absolute", inset: 0, animation: "mraSpin 1.1s linear infinite" }}>
+          <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={L.line} strokeWidth="3"/>
+          <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={L.navy} strokeWidth="3"
+                  strokeLinecap="round" strokeDasharray={`${c*0.26} ${c}`}/>
+        </svg>
+        <img src="/icon-192.png" alt="Master Review Academy" width={100} height={100}
+             style={{ position: "absolute", inset: 0, margin: "auto", borderRadius: 22,
+                      display: "block" }}/>
+      </div>
+      <div style={{ marginTop: 26, fontSize: 17, fontWeight: 800, letterSpacing: 2,
+                    color: L.navy, textAlign: "center" }}>
+        MASTER REVIEW ACADEMY
+      </div>
+    </div>
+  );
+}
+
 function AuthScreen({ onLogin }) {
   const viewport = useViewport();
   const wide = viewport !== "phone";
@@ -1459,6 +1485,12 @@ export default function MasterReviewAcademy() {
   const storage = useStorage(user);
   const [streak, setStreak] = useState(0);
   const [syncNonce, setSyncNonce] = useState(0);
+  const [booting, setBooting] = useState(true);
+
+  useEffect(() => {
+    const t = setTimeout(() => setBooting(false), 1100);
+    return () => clearTimeout(t);
+  }, []);
 
   useEffect(() => { if (user) setStreak(bumpStreak(storage)); }, [user]);
 
@@ -1488,6 +1520,8 @@ export default function MasterReviewAcademy() {
     const scores = QUIZ_REGISTRY.map(q => getData(q.id)?.score || 0);
     return Math.round(scores.reduce((a,b)=>a+b,0) / QUIZ_REGISTRY.length);
   };
+
+  if (booting) return <SplashScreen/>;
 
   if (!user) return <AuthScreen onLogin={handleLogin}/>;
 
