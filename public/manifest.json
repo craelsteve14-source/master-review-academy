@@ -4,13 +4,13 @@
   "description": "LET Board Examination Review Platform",
   "icons": [
     {
-      "src": "icons/icon-192.png",
+      "src": "icon-192.png",
       "type": "image/png",
       "sizes": "192x192",
       "purpose": "any maskable"
     },
     {
-      "src": "icons/icon-512.png",
+      "src": "icon-512.png",
       "type": "image/png",
       "sizes": "512x512",
       "purpose": "any maskable"
@@ -19,8 +19,8 @@
   "start_url": ".",
   "display": "standalone",
   "orientation": "portrait",
-  "theme_color": "#09090b",
-  "background_color": "#09090b",
+  "theme_color": "#0E2348",
+  "background_color": "#0E2348",
   "scope": "/",
   "categories": ["education"]
 }
