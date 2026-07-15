@@ -695,12 +695,10 @@ function SolidBtn({ onClick, children, color="#6366f1", style={} }) {
 // LOGIN / REGISTER
 // ═══════════════════════════════════════════════════════════════════
 function SplashScreen({ fading }) {
-  // Matches the OS-generated PWA launch splash (background_color from
-  // manifest.json, icon dead-centered on screen) so the handoff from that
-  // native frame to this one doesn't visibly jump or flash a different color.
-  // Uses the 512px icon source (not 192px) even though it's displayed small,
-  // so it stays crisp on high-density phone screens instead of upscaling a
-  // low-res source.
+  // Background matches the OS-generated PWA launch splash so the handoff
+  // from that native frame doesn't flash a different color, though the
+  // icon here sits higher (25% from top) rather than dead-centered like
+  // the OS splash, which is fixed and outside our control.
   const box = 52;
   const iconSize = 33;
   const r = 23;
@@ -709,7 +707,7 @@ function SplashScreen({ fading }) {
     <div style={{ background: L.bg, minHeight: "100vh", position: "relative", fontFamily: pf,
                   opacity: fading ? 0 : 1, transform: fading ? "scale(0.97)" : "scale(1)",
                   transition: "opacity .4s ease, transform .4s ease" }}>
-      <div style={{ position: "absolute", top: "50%", left: "50%",
+      <div style={{ position: "absolute", top: "25%", left: "50%",
                     transform: "translate(-50%, -50%)", width: box, height: box }}>
         {/* Separate wrapper for the fade/scale-in so it doesn't fight with the
             ring's own continuous rotation on the shared transform property. */}
@@ -726,7 +724,7 @@ function SplashScreen({ fading }) {
              style={{ position: "absolute", inset: 0, margin: "auto", borderRadius: "50%",
                       display: "block" }}/>
       </div>
-      <div style={{ position: "absolute", top: `calc(50% + ${box/2 + 22}px)`, left: "50%",
+      <div style={{ position: "absolute", top: `calc(25% + ${box/2 + 22}px)`, left: "50%",
                     transform: "translateX(-50%)", fontSize: 10, fontWeight: 800, letterSpacing: 1,
                     color: L.navy, textAlign: "center", whiteSpace: "nowrap",
                     animation: "mraSplashIn .45s ease-out .28s both" }}>
