@@ -694,7 +694,7 @@ function SolidBtn({ onClick, children, color="#6366f1", style={} }) {
 // ═══════════════════════════════════════════════════════════════════
 // LOGIN / REGISTER
 // ═══════════════════════════════════════════════════════════════════
-function SplashScreen() {
+function SplashScreen({ fading }) {
   // Matches the OS-generated PWA launch splash (background_color from
   // manifest.json, icon dead-centered on screen) so the handoff from that
   // native frame to this one doesn't visibly jump or flash a different color.
@@ -706,7 +706,9 @@ function SplashScreen() {
   const r = 96;
   const c = 2 * Math.PI * r;
   return (
-    <div style={{ background: L.bg, minHeight: "100vh", position: "relative", fontFamily: pf }}>
+    <div style={{ background: L.bg, minHeight: "100vh", position: "relative", fontFamily: pf,
+                  opacity: fading ? 0 : 1, transform: fading ? "scale(0.97)" : "scale(1)",
+                  transition: "opacity .4s ease, transform .4s ease" }}>
       <div style={{ position: "absolute", top: "50%", left: "50%",
                     transform: "translate(-50%, -50%)", width: box, height: box }}>
         {/* Separate wrapper for the fade/scale-in so it doesn't fight with the
@@ -824,7 +826,8 @@ function AuthScreen({ onLogin }) {
 
   return (
     <div style={{ background: L.bg, minHeight: "100vh", fontFamily: pf, display: "flex",
-      alignItems: "center", justifyContent: "center", padding: rs(20) }}>
+      alignItems: "center", justifyContent: "center", padding: rs(20),
+      animation: "mraScreenIn .4s ease-out both" }}>
       <div style={{ width: "100%", maxWidth: wide ? 440 * S : 380 }}>
 
         <div className="mra-hover-lift" style={{ background: L.cream, borderRadius: rs(22),
@@ -950,7 +953,8 @@ function AdminPanel({ onBack }) {
   }
 
   return (
-    <div style={{ background:BG, minHeight:"100vh", fontFamily:sf, color:TXT }}>
+    <div style={{ background:BG, minHeight:"100vh", fontFamily:sf, color:TXT,
+                  animation:"mraScreenIn .4s ease-out both" }}>
       <NavBar title="Admin Panel"
         left={<GhostBtn onClick={onBack}>← Dashboard</GhostBtn>}
         right={<span style={{ fontSize:11, color:"#6366f1", fontWeight:700, letterSpacing:"1px" }}>OWNER</span>}
@@ -1500,10 +1504,14 @@ export default function MasterReviewAcademy() {
   const [streak, setStreak] = useState(0);
   const [syncNonce, setSyncNonce] = useState(0);
   const [booting, setBooting] = useState(true);
+  const [splashFading, setSplashFading] = useState(false);
 
   useEffect(() => {
-    const t = setTimeout(() => setBooting(false), 2000);
-    return () => clearTimeout(t);
+    // Total splash time is 3.5s: shown solid, then eases into a fade-out
+    // over the last 400ms so the handoff to the app isn't an abrupt cut.
+    const fadeStart = setTimeout(() => setSplashFading(true), 3100);
+    const t = setTimeout(() => setBooting(false), 3500);
+    return () => { clearTimeout(fadeStart); clearTimeout(t); };
   }, []);
 
   useEffect(() => { if (user) setStreak(bumpStreak(storage)); }, [user]);
@@ -1535,7 +1543,7 @@ export default function MasterReviewAcademy() {
     return Math.round(scores.reduce((a,b)=>a+b,0) / QUIZ_REGISTRY.length);
   };
 
-  if (booting) return <SplashScreen/>;
+  if (booting) return <SplashScreen fading={splashFading}/>;
 
   if (!user) return <AuthScreen onLogin={handleLogin}/>;
 
@@ -1586,7 +1594,8 @@ export default function MasterReviewAcademy() {
     const nav = v => setView(v === "master" ? "master" : v);
 
     if (viewport === "desktop") return (
-      <div style={{ background:L.bg, minHeight:"100vh", display:"flex", fontFamily:pf }}>
+      <div style={{ background:L.bg, minHeight:"100vh", display:"flex", fontFamily:pf,
+                    animation:"mraScreenIn .4s ease-out both" }}>
         <Sidebar active={active} onNav={nav} user={user} isAdmin={isAdmin}
           onAdmin={()=>setView("admin")} onLogout={handleLogout} streak={streak} mastery={totalMastery()}/>
         <div style={{ flex:1, minHeight:"100vh", display:"flex", justifyContent:"center" }}>
@@ -1602,7 +1611,8 @@ export default function MasterReviewAcademy() {
 
     const contentMaxWidth = viewport === "tablet" ? 720 : 480;
     return (
-      <div style={{ background:L.bg, minHeight:"100vh", display:"flex", justifyContent:"center", fontFamily:pf }}>
+      <div style={{ background:L.bg, minHeight:"100vh", display:"flex", justifyContent:"center", fontFamily:pf,
+                    animation:"mraScreenIn .4s ease-out both" }}>
         <div style={{ width:"100%", maxWidth:contentMaxWidth, minHeight:"100vh", display:"flex", flexDirection:"column", background:L.bg }}>
           <LHeader user={user} onMenu={()=>setMenuOpen(true)} onBell={()=>{}}/>
           {content}
