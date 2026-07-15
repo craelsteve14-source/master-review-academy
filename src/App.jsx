@@ -441,7 +441,7 @@ function Mascot({ pose = "idle", size = 92 }) {
   const height = size / MASCOT_ASPECT;
   return (
     <div style={{ width: size, height, position: "relative", flex: "none" }}>
-      <img src="/mascot/professor.png" alt="Professor Maya" width={size} height={height}
+      <img src="/mascot/professor.png" alt="Professor Lumos" width={size} height={height}
         style={{ width: size, height, objectFit: "contain", display: "block",
           animation: bodyAnim, transformOrigin: "50% 85%",
           filter: pose === "oops" ? "saturate(0.85)" : "none" }} />
@@ -839,7 +839,7 @@ function AuthScreen({ onLogin }) {
               <span style={{ fontSize: rs(11), fontWeight: 700, letterSpacing: ".4px", color: L.navy, textTransform: "uppercase" }}>Master Review Academy</span>
             </div>
             <h1 style={{ fontSize: rs(19), fontWeight: 700, color: L.ink, lineHeight: 1.28, margin: 0 }}>
-              Hi, I'm Professor Maya!
+              Hi, I'm Professor Lumos!
             </h1>
             <p style={{ fontSize: rs(11.5), color: "#8a7f6f", marginTop: 6, lineHeight: 1.5 }}>{welcome}</p>
           </div>
