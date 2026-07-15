@@ -154,7 +154,7 @@ async function deleteQuizSession(quizId) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// MASTER REVIEW ACADEMY v3
+// LUMEN v3
 // 7 subjects x 50Q (Prof Ed + Gen Ed)
 // Master Board Exam: 350Q (all 7 banks combined)
 // Auth: Username/Password | Admin: Rating Sheet
@@ -503,8 +503,8 @@ function Sidebar({ active, onNav, user, isAdmin, onAdmin, onLogout, streak, mast
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 22px 28px" }}>
         <svg width="30" height="26" viewBox="0 0 26 22" style={{ flex: "none" }}><path d="M13 0L26 5.5L13 11L0 5.5L13 0Z" fill={L.gold}/><path d="M6 8V14C6 14 9 17 13 17C17 17 20 14 20 14V8L13 11L6 8Z" fill={L.gold}/></svg>
         <div style={{ lineHeight: 1.2 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", letterSpacing: ".2px" }}>MASTER REVIEW</div>
-          <div style={{ fontSize: 9.5, color: "#8a93a8", letterSpacing: "1px" }}>ACADEMY</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", letterSpacing: ".2px" }}>LUMEN</div>
+          <div style={{ fontSize: 9.5, color: "#8a93a8", letterSpacing: "1px" }}>LET REVIEW</div>
         </div>
       </div>
 
@@ -564,7 +564,7 @@ function LHeader({ user, onMenu, onBell }) {
       <div style={{ display:"flex", alignItems:"center", gap:8, flex:1, minWidth:0 }}>
         <svg width="24" height="22" viewBox="0 0 26 22" style={{ flex:"none" }}><path d="M13 0L26 5.5L13 11L0 5.5L13 0Z" fill={L.navy}/><path d="M6 8V14C6 14 9 17 13 17C17 17 20 14 20 14V8L13 11L6 8Z" fill={L.navy}/><path d="M23 6.5V13" stroke={L.gold} strokeWidth="1.4"/><circle cx="23" cy="14" r="1.6" fill={L.gold}/></svg>
         <div style={{ lineHeight:1.15, minWidth:0 }}>
-          <div style={{ fontSize:12, fontWeight:700, letterSpacing:.2, color:L.ink, whiteSpace:"nowrap" }}>MASTER REVIEW ACADEMY</div>
+          <div style={{ fontSize:12, fontWeight:700, letterSpacing:.2, color:L.ink, whiteSpace:"nowrap" }}>LUMEN</div>
           <div style={{ fontSize:8, color:L.muted, whiteSpace:"nowrap" }}>Your Journey. Our Guidance. Your Success.</div>
         </div>
       </div>
@@ -722,7 +722,7 @@ function SplashScreen({ fading }) {
                     strokeLinecap="round" strokeDasharray={`${c*0.26} ${c}`}/>
           </svg>
         </div>
-        <img src="/splash-icon.png" alt="Master Review Academy" width={iconSize} height={iconSize}
+        <img src="/splash-icon.png" alt="Lumen" width={iconSize} height={iconSize}
              style={{ position: "absolute", inset: 0, margin: "auto", borderRadius: "50%",
                       display: "block" }}/>
       </div>
@@ -730,7 +730,7 @@ function SplashScreen({ fading }) {
                     transform: "translateX(-50%)", fontSize: 10, fontWeight: 800, letterSpacing: 1,
                     color: L.navy, textAlign: "center", whiteSpace: "nowrap",
                     animation: "mraSplashIn .45s ease-out .28s both" }}>
-        MASTER REVIEW ACADEMY
+        LUMEN
       </div>
     </div>
   );
@@ -836,7 +836,7 @@ function AuthScreen({ onLogin }) {
           <div style={{ flex: 1, minWidth: 0, paddingBottom: rs(20) }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
               <svg width={rs(22)} height={rs(19)} viewBox="0 0 26 22"><path d="M13 0L26 5.5L13 11L0 5.5L13 0Z" fill={L.navy}/><path d="M6 8V14C6 14 9 17 13 17C17 17 20 14 20 14V8L13 11L6 8Z" fill={L.navy}/></svg>
-              <span style={{ fontSize: rs(11), fontWeight: 700, letterSpacing: ".4px", color: L.navy, textTransform: "uppercase" }}>Master Review Academy</span>
+              <span style={{ fontSize: rs(11), fontWeight: 700, letterSpacing: ".4px", color: L.navy, textTransform: "uppercase" }}>Lumen</span>
             </div>
             <h1 style={{ fontSize: rs(19), fontWeight: 700, color: L.ink, lineHeight: 1.28, margin: 0 }}>
               Hi, I'm Professor Lumos!
