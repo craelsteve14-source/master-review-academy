@@ -722,7 +722,7 @@ function SplashScreen({ fading }) {
                     strokeLinecap="round" strokeDasharray={`${c*0.26} ${c}`}/>
           </svg>
         </div>
-        <img src="/icon-512.png" alt="Master Review Academy" width={iconSize} height={iconSize}
+        <img src="/splash-icon.png" alt="Master Review Academy" width={iconSize} height={iconSize}
              style={{ position: "absolute", inset: 0, margin: "auto", borderRadius: "50%",
                       display: "block" }}/>
       </div>

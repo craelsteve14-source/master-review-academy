@@ -1,4 +1,4 @@
-const CACHE = 'mra-v18';
+const CACHE = 'mra-v19';
 self.addEventListener('install', () => {
   self.skipWaiting();
 });
