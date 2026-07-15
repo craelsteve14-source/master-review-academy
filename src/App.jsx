@@ -723,7 +723,7 @@ function SplashScreen({ fading }) {
           </svg>
         </div>
         <img src="/icon-512.png" alt="Master Review Academy" width={iconSize} height={iconSize}
-             style={{ position: "absolute", inset: 0, margin: "auto", borderRadius: 8,
+             style={{ position: "absolute", inset: 0, margin: "auto", borderRadius: "50%",
                       display: "block" }}/>
       </div>
       <div style={{ position: "absolute", top: `calc(50% + ${box/2 + 22}px)`, left: "50%",

@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <title>Master Review Academy</title>
     <style>
-      * { box-sizing: border-box; margin: 0; padding: 0; }
+      * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
       body { background: #F6F6F8; }
 
       @keyframes mraMascotBob { 0%,100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-5px) rotate(-1deg); } }
@@ -41,6 +41,21 @@
       .mra-hover-navitem { transition: background-color .15s ease, color .15s ease; }
       @media (hover: hover) {
         .mra-hover-navitem:hover { background-color: rgba(240,186,72,.08); }
+      }
+
+      /* Replaces the browser's default square tap-highlight with a soft
+         circular fade centered on whatever was tapped. */
+      .mra-hover-lift, .mra-hover-btn, .mra-hover-navitem { position: relative; overflow: hidden; }
+      .mra-hover-lift::after, .mra-hover-btn::after, .mra-hover-navitem::after {
+        content: ""; position: absolute; inset: 0; border-radius: inherit;
+        background: radial-gradient(circle, rgba(14,35,72,.16) 0%, rgba(14,35,72,0) 72%);
+        opacity: 0; transform: scale(.6);
+        transition: opacity .45s ease, transform .45s ease;
+        pointer-events: none;
+      }
+      .mra-hover-lift:active::after, .mra-hover-btn:active::after, .mra-hover-navitem:active::after {
+        opacity: 1; transform: scale(1.1);
+        transition: opacity .05s ease, transform .05s ease;
       }
     </style>
   </head>
