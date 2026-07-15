@@ -1488,7 +1488,7 @@ export default function MasterReviewAcademy() {
   const [booting, setBooting] = useState(true);
 
   useEffect(() => {
-    const t = setTimeout(() => setBooting(false), 1100);
+    const t = setTimeout(() => setBooting(false), 500);
     return () => clearTimeout(t);
   }, []);
 
