@@ -709,19 +709,25 @@ function SplashScreen() {
     <div style={{ background: L.bg, minHeight: "100vh", position: "relative", fontFamily: pf }}>
       <div style={{ position: "absolute", top: "50%", left: "50%",
                     transform: "translate(-50%, -50%)", width: box, height: box }}>
-        <svg width={box} height={box} viewBox={`0 0 ${box} ${box}`}
-             style={{ position: "absolute", inset: 0, animation: "mraSpin 1.1s linear infinite" }}>
-          <circle cx={box/2} cy={box/2} r={r} fill="none" stroke={L.line} strokeWidth="3"/>
-          <circle cx={box/2} cy={box/2} r={r} fill="none" stroke={L.navy} strokeWidth="3"
-                  strokeLinecap="round" strokeDasharray={`${c*0.26} ${c}`}/>
-        </svg>
+        {/* Separate wrapper for the fade/scale-in so it doesn't fight with the
+            ring's own continuous rotation on the shared transform property. */}
+        <div style={{ position: "absolute", inset: 0,
+                      animation: "mraSplashIn .45s ease-out .12s both" }}>
+          <svg width={box} height={box} viewBox={`0 0 ${box} ${box}`}
+               style={{ position: "absolute", inset: 0, animation: "mraSpin 1.1s linear infinite" }}>
+            <circle cx={box/2} cy={box/2} r={r} fill="none" stroke={L.line} strokeWidth="3"/>
+            <circle cx={box/2} cy={box/2} r={r} fill="none" stroke={L.navy} strokeWidth="3"
+                    strokeLinecap="round" strokeDasharray={`${c*0.26} ${c}`}/>
+          </svg>
+        </div>
         <img src="/icon-512.png" alt="Master Review Academy" width={iconSize} height={iconSize}
              style={{ position: "absolute", inset: 0, margin: "auto", borderRadius: 30,
                       display: "block" }}/>
       </div>
       <div style={{ position: "absolute", top: `calc(50% + ${box/2 + 44}px)`, left: "50%",
                     transform: "translateX(-50%)", fontSize: 17, fontWeight: 800, letterSpacing: 2,
-                    color: L.navy, textAlign: "center", whiteSpace: "nowrap" }}>
+                    color: L.navy, textAlign: "center", whiteSpace: "nowrap",
+                    animation: "mraSplashIn .45s ease-out .28s both" }}>
         MASTER REVIEW ACADEMY
       </div>
     </div>
@@ -1496,7 +1502,7 @@ export default function MasterReviewAcademy() {
   const [booting, setBooting] = useState(true);
 
   useEffect(() => {
-    const t = setTimeout(() => setBooting(false), 500);
+    const t = setTimeout(() => setBooting(false), 850);
     return () => clearTimeout(t);
   }, []);
 
