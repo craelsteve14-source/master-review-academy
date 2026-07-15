@@ -701,9 +701,9 @@ function SplashScreen({ fading }) {
   // Uses the 512px icon source (not 192px) even though it's displayed small,
   // so it stays crisp on high-density phone screens instead of upscaling a
   // low-res source.
-  const box = 216;
-  const iconSize = 136;
-  const r = 96;
+  const box = 150;
+  const iconSize = 95;
+  const r = 66;
   const c = 2 * Math.PI * r;
   return (
     <div style={{ background: L.bg, minHeight: "100vh", position: "relative", fontFamily: pf,
@@ -723,11 +723,11 @@ function SplashScreen({ fading }) {
           </svg>
         </div>
         <img src="/icon-512.png" alt="Master Review Academy" width={iconSize} height={iconSize}
-             style={{ position: "absolute", inset: 0, margin: "auto", borderRadius: 30,
+             style={{ position: "absolute", inset: 0, margin: "auto", borderRadius: 21,
                       display: "block" }}/>
       </div>
-      <div style={{ position: "absolute", top: `calc(50% + ${box/2 + 44}px)`, left: "50%",
-                    transform: "translateX(-50%)", fontSize: 17, fontWeight: 800, letterSpacing: 2,
+      <div style={{ position: "absolute", top: `calc(50% + ${box/2 + 32}px)`, left: "50%",
+                    transform: "translateX(-50%)", fontSize: 13, fontWeight: 800, letterSpacing: 1.5,
                     color: L.navy, textAlign: "center", whiteSpace: "nowrap",
                     animation: "mraSplashIn .45s ease-out .28s both" }}>
         MASTER REVIEW ACADEMY
