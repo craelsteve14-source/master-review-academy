@@ -701,9 +701,9 @@ function SplashScreen({ fading }) {
   // Uses the 512px icon source (not 192px) even though it's displayed small,
   // so it stays crisp on high-density phone screens instead of upscaling a
   // low-res source.
-  const box = 150;
-  const iconSize = 95;
-  const r = 66;
+  const box = 52;
+  const iconSize = 33;
+  const r = 23;
   const c = 2 * Math.PI * r;
   return (
     <div style={{ background: L.bg, minHeight: "100vh", position: "relative", fontFamily: pf,
@@ -717,17 +717,17 @@ function SplashScreen({ fading }) {
                       animation: "mraSplashIn .45s ease-out .12s both" }}>
           <svg width={box} height={box} viewBox={`0 0 ${box} ${box}`}
                style={{ position: "absolute", inset: 0, animation: "mraSpin 1.1s linear infinite" }}>
-            <circle cx={box/2} cy={box/2} r={r} fill="none" stroke={L.line} strokeWidth="3"/>
-            <circle cx={box/2} cy={box/2} r={r} fill="none" stroke={L.navy} strokeWidth="3"
+            <circle cx={box/2} cy={box/2} r={r} fill="none" stroke={L.line} strokeWidth="1.5"/>
+            <circle cx={box/2} cy={box/2} r={r} fill="none" stroke={L.navy} strokeWidth="1.5"
                     strokeLinecap="round" strokeDasharray={`${c*0.26} ${c}`}/>
           </svg>
         </div>
         <img src="/icon-512.png" alt="Master Review Academy" width={iconSize} height={iconSize}
-             style={{ position: "absolute", inset: 0, margin: "auto", borderRadius: 21,
+             style={{ position: "absolute", inset: 0, margin: "auto", borderRadius: 8,
                       display: "block" }}/>
       </div>
-      <div style={{ position: "absolute", top: `calc(50% + ${box/2 + 32}px)`, left: "50%",
-                    transform: "translateX(-50%)", fontSize: 13, fontWeight: 800, letterSpacing: 1.5,
+      <div style={{ position: "absolute", top: `calc(50% + ${box/2 + 22}px)`, left: "50%",
+                    transform: "translateX(-50%)", fontSize: 10, fontWeight: 800, letterSpacing: 1,
                     color: L.navy, textAlign: "center", whiteSpace: "nowrap",
                     animation: "mraSplashIn .45s ease-out .28s both" }}>
         MASTER REVIEW ACADEMY
