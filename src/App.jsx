@@ -695,25 +695,33 @@ function SolidBtn({ onClick, children, color="#6366f1", style={} }) {
 // LOGIN / REGISTER
 // ═══════════════════════════════════════════════════════════════════
 function SplashScreen() {
-  const size = 168;
-  const r = 74;
+  // Matches the OS-generated PWA launch splash (background_color from
+  // manifest.json, icon dead-centered on screen) so the handoff from that
+  // native frame to this one doesn't visibly jump or flash a different color.
+  // Uses the 512px icon source (not 192px) even though it's displayed small,
+  // so it stays crisp on high-density phone screens instead of upscaling a
+  // low-res source.
+  const box = 216;
+  const iconSize = 136;
+  const r = 96;
   const c = 2 * Math.PI * r;
   return (
-    <div style={{ background: L.bg, minHeight: "100vh", display: "flex", flexDirection: "column",
-                  alignItems: "center", justifyContent: "center", fontFamily: pf }}>
-      <div style={{ position: "relative", width: size, height: size }}>
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}
+    <div style={{ background: L.bg, minHeight: "100vh", position: "relative", fontFamily: pf }}>
+      <div style={{ position: "absolute", top: "50%", left: "50%",
+                    transform: "translate(-50%, -50%)", width: box, height: box }}>
+        <svg width={box} height={box} viewBox={`0 0 ${box} ${box}`}
              style={{ position: "absolute", inset: 0, animation: "mraSpin 1.1s linear infinite" }}>
-          <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={L.line} strokeWidth="3"/>
-          <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={L.navy} strokeWidth="3"
+          <circle cx={box/2} cy={box/2} r={r} fill="none" stroke={L.line} strokeWidth="3"/>
+          <circle cx={box/2} cy={box/2} r={r} fill="none" stroke={L.navy} strokeWidth="3"
                   strokeLinecap="round" strokeDasharray={`${c*0.26} ${c}`}/>
         </svg>
-        <img src="/icon-192.png" alt="Master Review Academy" width={100} height={100}
-             style={{ position: "absolute", inset: 0, margin: "auto", borderRadius: 22,
+        <img src="/icon-512.png" alt="Master Review Academy" width={iconSize} height={iconSize}
+             style={{ position: "absolute", inset: 0, margin: "auto", borderRadius: 30,
                       display: "block" }}/>
       </div>
-      <div style={{ marginTop: 26, fontSize: 17, fontWeight: 800, letterSpacing: 2,
-                    color: L.navy, textAlign: "center" }}>
+      <div style={{ position: "absolute", top: `calc(50% + ${box/2 + 44}px)`, left: "50%",
+                    transform: "translateX(-50%)", fontSize: 17, fontWeight: 800, letterSpacing: 2,
+                    color: L.navy, textAlign: "center", whiteSpace: "nowrap" }}>
         MASTER REVIEW ACADEMY
       </div>
     </div>
