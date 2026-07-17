@@ -352,6 +352,14 @@ const DIFF   = {
 // dark tokens above)
 // ═══════════════════════════════════════════════════════════════════
 const pf = "'Poppins',sans-serif";
+// Lightens (pct > 0) or darkens (pct < 0) a hex color — used to build the
+// two-stop gradients behind icon badges from a single subject/category color.
+function shade(hex, pct) {
+  const f = parseInt(hex.slice(1), 16), t = pct < 0 ? 0 : 255, p = Math.abs(pct);
+  const R = f >> 16, G = (f >> 8) & 0x00ff, B = f & 0x0000ff;
+  return "#" + (0x1000000 + (Math.round((t - R) * p) + R) * 0x10000 +
+    (Math.round((t - G) * p) + G) * 0x100 + (Math.round((t - B) * p) + B)).toString(16).slice(1);
+}
 const L = {
   navy:"#0E2348", navyNav:"#071A37", gold:"#F0BA48", cream:"#FBF3E3",
   green:"#1EA457", greenTint:"#EAF7EE", orange:"#F5A623", orangeTint:"#FEF3E2",
@@ -377,45 +385,57 @@ function NavIcon({ type, active }) {
 
 // Elegant line-icon set replacing the QUIZ_REGISTRY emoji on the light screens.
 const SUBJ_ICON_PATHS = {
-  childado: (c) => <><path d="M9 3a4.5 4.5 0 00-4.2 6.1A4 4 0 006 17h1M15 3a4.5 4.5 0 014.2 6.1A4 4 0 0118 17h-1M9 3c0 3-1.5 4-1.5 7a3 3 0 003 3h3a3 3 0 003-3c0-3-1.5-4-1.5-7M9 3a3 3 0 016 0" stroke={c} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M10.5 21v-2M13.5 21v-2" stroke={c} strokeWidth="1.5" strokeLinecap="round"/></>,
-  assess:   (c) => <><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" stroke={c} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></>,
-  inclusive:(c) => <><circle cx="9" cy="9" r="5.5" stroke={c} strokeWidth="1.5"/><circle cx="15" cy="15" r="5.5" stroke={c} strokeWidth="1.5"/></>,
-  science:  (c) => <><path d="M10 3h4M10.5 3v5.5L6 17a2 2 0 001.8 3h8.4a2 2 0 001.8-3l-4.5-8.5V3" stroke={c} strokeWidth="1.5" strokeLinejoin="round"/><path d="M8.5 15h7" stroke={c} strokeWidth="1.4" strokeLinecap="round"/></>,
-  socsci:   (c) => <><path d="M3 9l9-5 9 5" stroke={c} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M5 9v9M9.5 9v9M14.5 9v9M19 9v9M3 21h18" stroke={c} strokeWidth="1.5" strokeLinecap="round"/></>,
-  contemp:  (c) => <><circle cx="12" cy="12" r="9" stroke={c} strokeWidth="1.5"/><ellipse cx="12" cy="12" rx="4" ry="9" stroke={c} strokeWidth="1.5"/><path d="M3 12h18" stroke={c} strokeWidth="1.5"/></>,
-  artapp:   (c) => <><path d="M12 3a9 9 0 100 18c1.1 0 1.8-.9 1.8-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.7-1.6 1.6-1.6H16a4 4 0 004-4c0-4.4-3.6-8.2-8-8.2z" stroke={c} strokeWidth="1.5" strokeLinejoin="round"/><circle cx="7.5" cy="12" r="1.1" fill={c}/><circle cx="9" cy="8" r="1.1" fill={c}/><circle cx="14" cy="7.5" r="1.1" fill={c}/></>,
-  english:  (c) => <><path d="M12 6.5c-1.5-1-4-1.5-8-1.5v13c4 0 6.5.5 8 1.5 1.5-1 4-1.5 8-1.5V5c-4 0-6.5.5-8 1.5z" stroke={c} strokeWidth="1.5" strokeLinejoin="round"/><path d="M12 6.5V19" stroke={c} strokeWidth="1.5"/></>,
-  filipino: (c) => <><path d="M4 4h13l-2.2 4L17 12H4" stroke={c} strokeWidth="1.5" strokeLinejoin="round"/><path d="M4 4v16" stroke={c} strokeWidth="1.5" strokeLinecap="round"/></>,
-  math:     (c) => <><path d="M12 3l8 15H4l8-15z" stroke={c} strokeWidth="1.5" strokeLinejoin="round"/><path d="M9 15h6" stroke={c} strokeWidth="1.4" strokeLinecap="round"/></>,
-  rizal:    (c) => <><path d="M19 3c-5 0-9 3-11 8-1 2.5-1.5 5-3 7 3-.5 5-1.5 7-3 5-2 8-6 8-11 0-.3 0-.7-1-1z" stroke={c} strokeWidth="1.5" strokeLinejoin="round"/><path d="M12 12L6 18" stroke={c} strokeWidth="1.5" strokeLinecap="round"/></>,
-  ethics2:  (c) => <><path d="M12 3v18M8 21h8" stroke={c} strokeWidth="1.5" strokeLinecap="round"/><path d="M12 6L5 8l3 6.5a3.4 3.4 0 004-.1L12 8zM12 6l7 2-3 6.5a3.4 3.4 0 01-4-.1L12 8z" stroke={c} strokeWidth="1.4" strokeLinejoin="round"/></>,
+  childado: (c) => <><path d="M9 3a4.5 4.5 0 00-4.2 6.1A4 4 0 006 17h1M15 3a4.5 4.5 0 014.2 6.1A4 4 0 0118 17h-1M9 3c0 3-1.5 4-1.5 7a3 3 0 003 3h3a3 3 0 003-3c0-3-1.5-4-1.5-7M9 3a3 3 0 016 0" stroke={c} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/><path d="M10.5 21v-2M13.5 21v-2" stroke={c} strokeWidth="2.2" strokeLinecap="round"/></>,
+  assess:   (c) => <><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" stroke={c} strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"/></>,
+  inclusive:(c) => <><circle cx="9" cy="9" r="5.5" stroke={c} strokeWidth="2.2"/><circle cx="15" cy="15" r="5.5" stroke={c} strokeWidth="2.2"/></>,
+  science:  (c) => <><path d="M10 3h4M10.5 3v5.5L6 17a2 2 0 001.8 3h8.4a2 2 0 001.8-3l-4.5-8.5V3" stroke={c} strokeWidth="2.2" strokeLinejoin="round"/><path d="M8.5 15h7" stroke={c} strokeWidth="2.1" strokeLinecap="round"/></>,
+  socsci:   (c) => <><path d="M3 9l9-5 9 5" stroke={c} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/><path d="M5 9v9M9.5 9v9M14.5 9v9M19 9v9M3 21h18" stroke={c} strokeWidth="2.2" strokeLinecap="round"/></>,
+  contemp:  (c) => <><circle cx="12" cy="12" r="9" stroke={c} strokeWidth="2.2"/><ellipse cx="12" cy="12" rx="4" ry="9" stroke={c} strokeWidth="2.2"/><path d="M3 12h18" stroke={c} strokeWidth="2.2"/></>,
+  artapp:   (c) => <><path d="M12 3a9 9 0 100 18c1.1 0 1.8-.9 1.8-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.7-1.6 1.6-1.6H16a4 4 0 004-4c0-4.4-3.6-8.2-8-8.2z" stroke={c} strokeWidth="2.2" strokeLinejoin="round"/><circle cx="7.5" cy="12" r="1.1" fill={c}/><circle cx="9" cy="8" r="1.1" fill={c}/><circle cx="14" cy="7.5" r="1.1" fill={c}/></>,
+  english:  (c) => <><path d="M12 6.5c-1.5-1-4-1.5-8-1.5v13c4 0 6.5.5 8 1.5 1.5-1 4-1.5 8-1.5V5c-4 0-6.5.5-8 1.5z" stroke={c} strokeWidth="2.2" strokeLinejoin="round"/><path d="M12 6.5V19" stroke={c} strokeWidth="2.2"/></>,
+  filipino: (c) => <><path d="M4 4h13l-2.2 4L17 12H4" stroke={c} strokeWidth="2.2" strokeLinejoin="round"/><path d="M4 4v16" stroke={c} strokeWidth="2.2" strokeLinecap="round"/></>,
+  math:     (c) => <><path d="M12 3l8 15H4l8-15z" stroke={c} strokeWidth="2.2" strokeLinejoin="round"/><path d="M9 15h6" stroke={c} strokeWidth="2.1" strokeLinecap="round"/></>,
+  rizal:    (c) => <><path d="M19 3c-5 0-9 3-11 8-1 2.5-1.5 5-3 7 3-.5 5-1.5 7-3 5-2 8-6 8-11 0-.3 0-.7-1-1z" stroke={c} strokeWidth="2.2" strokeLinejoin="round"/><path d="M12 12L6 18" stroke={c} strokeWidth="2.2" strokeLinecap="round"/></>,
+  ethics2:  (c) => <><path d="M12 3v18M8 21h8" stroke={c} strokeWidth="2.2" strokeLinecap="round"/><path d="M12 6L5 8l3 6.5a3.4 3.4 0 004-.1L12 8zM12 6l7 2-3 6.5a3.4 3.4 0 01-4-.1L12 8z" stroke={c} strokeWidth="2.1" strokeLinejoin="round"/></>,
 };
 function SubjIcon({ subjId, color = "#14213D", size = 20 }) {
   const draw = SUBJ_ICON_PATHS[subjId];
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none">{draw ? draw(color) : <circle cx="12" cy="12" r="8" stroke={color} strokeWidth="1.6"/>}</svg>;
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none">{draw ? draw(color) : <circle cx="12" cy="12" r="8" stroke={color} strokeWidth="2.2"/>}</svg>;
 }
 function CategoryIcon({ type, color, size = 22 }) {
   if (type === "prof") return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <rect x="3" y="7" width="18" height="13" rx="2" stroke={color} strokeWidth="1.5"/>
-      <path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2" stroke={color} strokeWidth="1.5"/>
-      <path d="M3 12h18M10.5 12v2h3v-2" stroke={color} strokeWidth="1.5" strokeLinejoin="round"/>
+      <rect x="3" y="7" width="18" height="13" rx="2" stroke={color} strokeWidth="2.2"/>
+      <path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2" stroke={color} strokeWidth="2.2"/>
+      <path d="M3 12h18M10.5 12v2h3v-2" stroke={color} strokeWidth="2.2" strokeLinejoin="round"/>
     </svg>
   );
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <path d="M12 4L2 9l10 5 8-4v6" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M12 4L2 9l10 5 8-4v6" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   );
 }
 function TrophyIcon({ color = "#F0BA48", size = 16 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <path d="M7 4h10v5a5 5 0 01-10 0V4z" stroke={color} strokeWidth="1.5" strokeLinejoin="round"/>
-      <path d="M7 5H4a3 3 0 003 3M17 5h3a3 3 0 01-3 3" stroke={color} strokeWidth="1.4" strokeLinecap="round"/>
-      <path d="M12 14v3M9 20h6M10 20v-2.5a1 1 0 011-1h2a1 1 0 011 1V20" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M7 4h10v5a5 5 0 01-10 0V4z" stroke={color} strokeWidth="2.1" strokeLinejoin="round"/>
+      <path d="M7 5H4a3 3 0 003 3M17 5h3a3 3 0 01-3 3" stroke={color} strokeWidth="2" strokeLinecap="round"/>
+      <path d="M12 14v3M9 20h6M10 20v-2.5a1 1 0 011-1h2a1 1 0 011 1V20" stroke={color} strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
+  );
+}
+// Rounded-square gradient badge behind a subject/category icon — the icon
+// itself should be passed the "url(#lumenIconGrad)" paint (defined once in
+// index.html) so its stroke reads as a light-to-gold gradient, not flat white.
+function IconBadge({ color, size = 40, radius, style, children }) {
+  const r = radius ?? Math.round(size * 0.3);
+  return (
+    <div style={{ width:size, height:size, borderRadius:r, flex:"none", display:"flex", alignItems:"center", justifyContent:"center",
+      background:`linear-gradient(135deg, ${shade(color,.35)} 0%, ${shade(color,-.35)} 100%)`, ...style }}>
+      {children}
+    </div>
   );
 }
 
@@ -554,7 +574,7 @@ function Sidebar({ active, onNav, user, isAdmin, onAdmin, onLogout, streak, mast
   );
 }
 
-function LHeader({ user, onMenu, onBell }) {
+function LHeader({ user, streak = 0, onMenu, onBell }) {
   return (
     <div style={{ height:56, padding:"0 20px", display:"flex", alignItems:"center", justifyContent:"space-between",
       flex:"none", fontFamily:pf, background:L.bg }}>
@@ -568,6 +588,13 @@ function LHeader({ user, onMenu, onBell }) {
           <div style={{ fontSize:8, color:L.muted, whiteSpace:"nowrap" }}>Your Journey. Our Guidance. Your Success.</div>
         </div>
       </div>
+      {streak > 0 && (
+        <div style={{ display:"flex", alignItems:"center", gap:4, background:"linear-gradient(135deg,#F7D488,#F0BA48)",
+          padding:"4px 9px 4px 7px", borderRadius:999, marginRight:10, flex:"none" }}>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M12 2c3 4-2 5-2 9a4 4 0 108 0c0-1.5-.6-2.3-1.2-3.1.4 2-1 3-1.8 2C16 8 15 5 12 2z" fill="#E08E12"/></svg>
+          <span style={{ fontSize:11, fontWeight:800, color:"#4A2E00" }}>{streak}</span>
+        </div>
+      )}
       <button onClick={onBell} style={{ background:"none", border:"none", cursor:"pointer", padding:0, flex:"none" }}>
         <svg width="20" height="22" viewBox="0 0 20 22"><path d="M10 0C7.79 0 6 1.79 6 4V4.6C3.6 5.7 2 8.1 2 11V15L0 18H20L18 15V11C18 8.1 16.4 5.7 14 4.6V4C14 1.79 12.21 0 10 0Z" fill={L.ink}/><path d="M7 19C7 20.66 8.34 22 10 22C11.66 22 13 20.66 13 19H7Z" fill={L.ink}/></svg>
       </button>
@@ -1612,7 +1639,7 @@ export default function MasterReviewAcademy() {
       <div style={{ background:L.bg, minHeight:"100vh", display:"flex", justifyContent:"center", fontFamily:pf,
                     animation:"mraScreenIn .4s ease-out both" }}>
         <div style={{ width:"100%", maxWidth:contentMaxWidth, minHeight:"100vh", display:"flex", flexDirection:"column", background:L.bg }}>
-          <LHeader user={user} onMenu={()=>setMenuOpen(true)} onBell={()=>{}}/>
+          <LHeader user={user} streak={streak} onMenu={()=>setMenuOpen(true)} onBell={()=>{}}/>
           {content}
           <BottomNav active={active} onNav={nav}/>
         </div>
@@ -1626,8 +1653,8 @@ export default function MasterReviewAcademy() {
 
   const SubjRing = ({ pct, color, tint, scale = 1 }) => (
     <div style={{ width:Math.round(52*scale), height:Math.round(52*scale), borderRadius:"50%", margin:`${Math.round(8*scale)}px auto ${Math.round(6*scale)}px`, display:"flex", alignItems:"center",
-      justifyContent:"center", position:"relative",
-      background:`conic-gradient(${color} 0deg ${Math.min(pct,100)*3.6}deg, ${tint} ${Math.min(pct,100)*3.6}deg 360deg)` }}>
+      justifyContent:"center", position:"relative", filter:"drop-shadow(0 3px 6px rgba(0,0,0,.12))",
+      background:`conic-gradient(from -90deg, ${shade(color,.3)} 0deg, ${color} ${Math.min(pct,100)*3.6}deg, ${tint} ${Math.min(pct,100)*3.6}deg 360deg)` }}>
       <div style={{ position:"absolute", inset:Math.round(5*scale), borderRadius:"50%", background:L.bg }}/>
       <div style={{ position:"relative", fontSize:Math.round(12.5*scale*10)/10, fontWeight:700, color:L.ink }}>{pct}%</div>
     </div>
@@ -1638,37 +1665,52 @@ export default function MasterReviewAcademy() {
     const wide = viewport !== "phone";
 
     const greeting = (
-      <div className="mra-hover-lift" style={{ padding: `${rs(20)}px 0 0 ${rs(20)}px`, background:L.cream, borderRadius:rs(22),
-        minHeight: rs(230), display:"flex", alignItems:"flex-end", gap:2, overflow:"hidden", position:"relative" }}>
-        <div style={{ flex:1, minWidth:0, maxWidth: wide ? "58%" : "50%", paddingBottom: rs(22) }}>
-          <h1 style={{ fontSize: rs(19), fontWeight:600, color:L.ink, lineHeight:1.28 }}>Good {new Date().getHours()<12?"morning":new Date().getHours()<18?"afternoon":"evening"},<br/>{user}!</h1>
-          <p style={{ fontSize: rs(11), color:"#8a7f6f", marginTop:rs(10), lineHeight:1.5 }}>{homeMsg}</p>
+      <div className="mra-hover-lift" style={{ padding: `${rs(20)}px 0 0 ${rs(20)}px`, borderRadius:rs(24),
+        minHeight: rs(230), display:"flex", alignItems:"flex-end", gap:2, overflow:"hidden", position:"relative",
+        background:"linear-gradient(150deg,#FEF6E7 0%, #FBEACB 60%, #F7DFAE 100%)",
+        boxShadow:"inset 0 1px 0 rgba(255,255,255,.7), 0 10px 24px -14px rgba(120,90,20,.35)" }}>
+        <div style={{ position:"absolute", right:rs(-30), top:rs(-30), width:rs(230), height:rs(230), borderRadius:"50%",
+          background:"radial-gradient(circle, rgba(240,186,72,.55) 0%, rgba(240,186,72,0) 70%)", filter:"blur(2px)" }}/>
+        <div style={{ flex:1, minWidth:0, maxWidth: wide ? "58%" : "50%", paddingBottom: rs(22), position:"relative" }}>
+          <h1 style={{ fontSize: rs(19), fontWeight:700, color:"#1c2440", lineHeight:1.28 }}>Good {new Date().getHours()<12?"morning":new Date().getHours()<18?"afternoon":"evening"},<br/>{user}!</h1>
+          <p style={{ fontSize: rs(11), color:"#8a7454", marginTop:rs(10), lineHeight:1.5 }}>{homeMsg}</p>
           <div onClick={()=>setView("library")} className="mra-hover-btn" style={{ display:"inline-block", marginTop: rs(12), background:L.navy, color:"#fff",
-            fontSize: rs(10.5), fontWeight:600, padding: `${rs(8)}px ${rs(15)}px`, borderRadius:999, cursor:"pointer", whiteSpace:"nowrap" }}>Let's Review →</div>
+            fontSize: rs(10.5), fontWeight:600, padding: `${rs(8)}px ${rs(15)}px`, borderRadius:999, cursor:"pointer", whiteSpace:"nowrap",
+            boxShadow:"0 8px 16px -8px rgba(14,35,72,.55)" }}>Let's Review →</div>
         </div>
-        <div style={{ flex:"none", marginBottom:-6, marginRight: rs(-8) }}>
+        <div style={{ flex:"none", marginBottom:-6, marginRight: rs(-8), position:"relative" }}>
           <Mascot pose="idle" size={rs(205)}/>
         </div>
       </div>
     );
 
     const progressCard = (
-      <div className="mra-hover-lift" style={{ background:L.navy, borderRadius:rs(22), padding: rs(20), color:"#fff" }}>
-        <div style={{ fontSize: rs(14.5), fontWeight:600, marginBottom: rs(16) }}>Overall Progress</div>
-        <div style={{ display:"flex", alignItems:"center", gap: rs(18) }}>
+      <div className="mra-hover-lift" style={{ borderRadius:rs(24), padding: rs(20), color:"#fff", position:"relative", overflow:"hidden",
+        background:"linear-gradient(150deg,#12295A 0%, #0E2348 55%, #0A1B3A 100%)" }}>
+        <div style={{ position:"absolute", right:rs(-40), top:rs(-50), width:rs(200), height:rs(200), borderRadius:"50%",
+          background:"radial-gradient(circle, rgba(240,186,72,.30) 0%, rgba(240,186,72,0) 70%)" }}/>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom: rs(16), position:"relative" }}>
+          <div style={{ fontSize: rs(14.5), fontWeight:600 }}>Overall Progress</div>
+          {streak > 0 && (
+            <div style={{ display:"flex", alignItems:"center", gap:4, background:"linear-gradient(135deg,#F7D488,#F0BA48)",
+              padding: `${rs(3)}px ${rs(9)}px`, borderRadius:999, fontSize: rs(9), fontWeight:800, color:"#4A2E00" }}>🔥 {streak}-day streak</div>
+          )}
+        </div>
+        <div style={{ display:"flex", alignItems:"center", gap: rs(18), position:"relative" }}>
           <div style={{ width: rs(112), height: rs(112), borderRadius:"50%", flex:"none",
-            background:`conic-gradient(${L.gold} 0deg ${totalMastery()*3.6}deg, rgba(255,255,255,.14) ${totalMastery()*3.6}deg 360deg)`,
+            background:`conic-gradient(from -90deg, #F7D488 0deg, ${L.gold} ${totalMastery()*3.6}deg, rgba(255,255,255,.14) ${totalMastery()*3.6}deg 360deg)`,
+            filter:"drop-shadow(0 4px 10px rgba(240,186,72,.35))",
             display:"flex", alignItems:"center", justifyContent:"center", position:"relative" }}>
-            <div style={{ position:"absolute", inset: rs(12), borderRadius:"50%", background:L.navy }}/>
+            <div style={{ position:"absolute", inset: rs(12), borderRadius:"50%", background:"#132C56" }}/>
             <div style={{ position:"relative", textAlign:"center" }}>
               <div style={{ fontSize: rs(22), fontWeight:700 }}>{totalMastery()}%</div>
               <div style={{ fontSize: rs(9), color:"#c9d2e2", marginTop:1 }}>Mastery</div>
             </div>
           </div>
           <div style={{ flex:1, display:"flex", flexDirection: wide ? "row" : "column", gap: wide ? rs(20) : rs(9), minWidth:0 }}>
-            <div style={{flex: wide?1:"none", minWidth:0}}><div style={{ fontSize: rs(10), color:"#a9b4c9" }}>Correct Answer</div><div style={{ fontSize: rs(15), fontWeight:600, marginTop:1 }}>{correctAnswers.toLocaleString()}</div></div>
-            <div style={{flex: wide?1:"none", minWidth:0}}><div style={{ fontSize: rs(10), color:"#a9b4c9" }}>Questions Answered</div><div style={{ fontSize: rs(15), fontWeight:600, marginTop:1 }}>{questionsAnswered.toLocaleString()}</div></div>
-            <div style={{flex: wide?1:"none", minWidth:0}}><div style={{ fontSize: rs(10), color:"#a9b4c9" }}>Remaining</div><div style={{ fontSize: rs(15), fontWeight:600, marginTop:1 }}>{remainingQuestions.toLocaleString()}</div></div>
+            <div style={{flex: wide?1:"none", minWidth:0, paddingLeft: wide?0:0, borderLeft: wide?"none":"none"}}><div style={{ fontSize: rs(10), color:"#a9b4c9" }}>Correct Answer</div><div style={{ fontSize: rs(15), fontWeight:600, marginTop:1 }}>{correctAnswers.toLocaleString()}</div></div>
+            <div style={{flex: wide?1:"none", minWidth:0, paddingLeft: wide?rs(20):0, borderLeft: wide?"2px solid rgba(255,255,255,.14)":"none"}}><div style={{ fontSize: rs(10), color:"#a9b4c9" }}>Questions Answered</div><div style={{ fontSize: rs(15), fontWeight:600, marginTop:1 }}>{questionsAnswered.toLocaleString()}</div></div>
+            <div style={{flex: wide?1:"none", minWidth:0, paddingLeft: wide?rs(20):0, borderLeft: wide?"2px solid rgba(255,255,255,.14)":"none"}}><div style={{ fontSize: rs(10), color:"#a9b4c9" }}>Remaining</div><div style={{ fontSize: rs(15), fontWeight:600, marginTop:1 }}>{remainingQuestions.toLocaleString()}</div></div>
           </div>
         </div>
       </div>
@@ -1676,16 +1718,20 @@ export default function MasterReviewAcademy() {
 
     const subjCards = (
       <div style={{ display:"flex", gap: rs(8) }}>
-        <div onClick={()=>{setFilterS("all-prof");setView("library");}} className="mra-hover-lift" style={{ flex:1, minWidth:0, borderRadius:rs(16), padding: `${rs(12)}px ${rs(6)}px ${rs(10)}px`,
-          textAlign:"center", background:L.greenTint, cursor:"pointer" }}>
-          <CategoryIcon type="prof" color={L.green} size={rs(22)}/>
+        <div onClick={()=>{setFilterS("all-prof");setView("library");}} className="mra-hover-lift" style={{ flex:1, minWidth:0, borderRadius:rs(18), padding: `${rs(12)}px ${rs(6)}px ${rs(10)}px`,
+          textAlign:"center", background:"linear-gradient(160deg,#EFFAF2,#E1F3E5)", cursor:"pointer" }}>
+          <IconBadge color={L.green} size={rs(38)} radius={rs(12)} style={{ margin:"0 auto", boxShadow:`0 ${rs(6)}px ${rs(14)}px -${rs(6)}px rgba(30,164,87,.55)` }}>
+            <CategoryIcon type="prof" color="url(#lumenIconGrad)" size={rs(19)}/>
+          </IconBadge>
           <div style={{ fontSize: rs(10.5), fontWeight:600, color:L.ink, marginTop: rs(6) }}>Professional Education</div>
           <SubjRing pct={avgOf(profSubset)} color={L.green} tint="#d7ead9" scale={S}/>
           <div style={{ fontSize: rs(8.5), color:L.muted, marginTop:2 }}>{profSubset.length} quizzes</div>
         </div>
-        <div onClick={()=>{setFilterS("all-gened");setView("library");}} className="mra-hover-lift" style={{ flex:1, minWidth:0, borderRadius:rs(16), padding: `${rs(12)}px ${rs(6)}px ${rs(10)}px`,
-          textAlign:"center", background:L.purpleTint, cursor:"pointer" }}>
-          <CategoryIcon type="gened" color={L.purple} size={rs(22)}/>
+        <div onClick={()=>{setFilterS("all-gened");setView("library");}} className="mra-hover-lift" style={{ flex:1, minWidth:0, borderRadius:rs(18), padding: `${rs(12)}px ${rs(6)}px ${rs(10)}px`,
+          textAlign:"center", background:"linear-gradient(160deg,#F9F0FD,#F0E1FA)", cursor:"pointer" }}>
+          <IconBadge color={L.purple} size={rs(38)} radius={rs(12)} style={{ margin:"0 auto", boxShadow:`0 ${rs(6)}px ${rs(14)}px -${rs(6)}px rgba(180,91,246,.55)` }}>
+            <CategoryIcon type="gened" color="url(#lumenIconGrad)" size={rs(19)}/>
+          </IconBadge>
           <div style={{ fontSize: rs(10.5), fontWeight:600, color:L.ink, marginTop: rs(6) }}>General Education</div>
           <SubjRing pct={avgOf(genSubset)} color={L.purple} tint="#e6d3f2" scale={S}/>
           <div style={{ fontSize: rs(8.5), color:L.muted, marginTop:2 }}>{genSubset.length} quizzes</div>
@@ -1694,20 +1740,20 @@ export default function MasterReviewAcademy() {
     );
 
     const continueCard = (
-      <div className="mra-hover-lift" style={{ background:L.card, borderRadius:rs(22), boxShadow:"0 3px 10px -4px rgba(14,35,72,.10)", border:`1px solid ${L.line}` }}>
+      <div className="mra-hover-lift" style={{ background:L.card, borderRadius:rs(22), boxShadow:"0 8px 22px -12px rgba(14,35,72,.16)", border:`1px solid #EEF0F4` }}>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding: `${rs(14)}px ${rs(18)}px 0` }}>
           <div style={{ fontSize: rs(13.5), fontWeight:600, color:L.ink }}>Continue Studying</div>
           <div onClick={()=>setView("library")} style={{ fontSize: rs(10.5), fontWeight:600, color:L.blue, cursor:"pointer" }}>View All</div>
         </div>
         {mostRecent ? (
           <div style={{ display:"flex", alignItems:"center", gap: rs(12), padding: `${rs(12)}px ${rs(18)}px ${rs(16)}px` }}>
-            <div style={{ width: rs(52), height: rs(52), borderRadius:rs(12), background:`${mostRecent.q.color}22`, flex:"none",
+            <div style={{ width: rs(52), height: rs(52), borderRadius:rs(13), background:`linear-gradient(160deg, ${shade(mostRecent.q.color,.75)}, ${shade(mostRecent.q.color,.6)})`, flex:"none",
               display:"flex", alignItems:"center", justifyContent:"center" }}><SubjIcon subjId={mostRecent.q.subjId} color={mostRecent.q.color} size={rs(24)}/></div>
             <div style={{ flex:1, minWidth:0 }}>
               <div style={{ fontSize: rs(9), color:L.muted }}>{mostRecent.q.category==="gened"?"General Education":"Professional Education"}</div>
               <div style={{ fontSize: rs(13), fontWeight:700, color:L.ink, margin:"2px 0 6px", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{mostRecent.q.title.split("—")[0].trim()}</div>
               <div style={{ height:rs(5), borderRadius:3, background:L.line, overflow:"hidden" }}>
-                <div style={{ height:"100%", width:`${mostRecent.data.score}%`, background:mostRecent.q.color, borderRadius:3 }}/>
+                <div style={{ height:"100%", width:`${mostRecent.data.score}%`, background:`linear-gradient(90deg, ${mostRecent.q.color}, ${shade(mostRecent.q.color,.35)})`, borderRadius:3 }}/>
               </div>
               <div style={{ fontSize: rs(9), color:L.muted, marginTop:4 }}>Last session: {mostRecent.data.score}%</div>
             </div>
@@ -1725,18 +1771,19 @@ export default function MasterReviewAcademy() {
     );
 
     const goalCard = (
-      <div className="mra-hover-lift" style={{ background:L.card, borderRadius:rs(22), boxShadow:"0 3px 10px -4px rgba(14,35,72,.10)", border:`1px solid ${L.line}` }}>
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding: `${rs(14)}px ${rs(18)}px 0` }}>
-          <div style={{ fontSize: rs(13.5), fontWeight:600, color:L.ink }}>Today's Goal</div>
+      <div className="mra-hover-lift" style={{ background:L.card, borderRadius:rs(22), boxShadow:"0 8px 22px -12px rgba(14,35,72,.16)", border:`1px solid #EEF0F4`,
+        padding: `${rs(12)}px ${rs(16)}px ${rs(14)}px`, display:"flex", gap: rs(10), alignItems:"center" }}>
+        <div style={{ width: rs(38), height: rs(38), borderRadius:rs(12), flex:"none", display:"flex", alignItems:"center", justifyContent:"center",
+          background:"linear-gradient(160deg,#FFF4DC,#FCE7B0)" }}>
+          <svg width={rs(18)} height={rs(18)} viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#E08E12" strokeWidth="1.7"/><circle cx="12" cy="12" r="5" stroke="#E08E12" strokeWidth="1.7"/><circle cx="12" cy="12" r="1.4" fill="#E08E12"/></svg>
         </div>
-        <div style={{ padding: `${rs(10)}px ${rs(18)}px ${rs(16)}px` }}>
-          <div style={{ fontSize: rs(12.5), fontWeight:600, color:L.ink, marginBottom:9 }}>Answer {DAILY_GOAL} questions</div>
-          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-            <div style={{ flex:1, height: rs(8), borderRadius:4, background:L.line, overflow:"hidden" }}>
-              <div style={{ height:"100%", width:`${Math.min(100,dailyAnswered/DAILY_GOAL*100)}%`, background:L.blue, borderRadius:4 }}/>
+        <div style={{ flex:1, minWidth:0 }}>
+          <div style={{ fontSize: rs(10.5), fontWeight:700, color:L.ink, marginBottom:6 }}>Today's Goal · Answer {DAILY_GOAL} questions</div>
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+            <div style={{ flex:1, height: rs(6), borderRadius:3, background:"#EFF1F5", overflow:"hidden" }}>
+              <div style={{ height:"100%", width:`${Math.min(100,dailyAnswered/DAILY_GOAL*100)}%`, background:"linear-gradient(90deg,#3580CC,#63A6E6)", borderRadius:3 }}/>
             </div>
-            <div style={{ fontSize: rs(11), fontWeight:600, color:L.ink }}>{Math.min(dailyAnswered,DAILY_GOAL)} / {DAILY_GOAL}</div>
-            <TrophyIcon color={L.gold} size={rs(17)}/>
+            <div style={{ fontSize: rs(9), fontWeight:700, color:L.ink, flex:"none" }}>{Math.min(dailyAnswered,DAILY_GOAL)}/{DAILY_GOAL}</div>
           </div>
         </div>
       </div>
@@ -1768,8 +1815,8 @@ export default function MasterReviewAcademy() {
       <MascotStrip message="Found something new to learn today?" scale={S}/>
 
       <div style={{ margin: `${rs(15)}px ${rs(20)}px 0` }}>
-        <div style={{ display:"flex", alignItems:"center", gap:8, background:"#fff", border:`1px solid ${L.line}`,
-          borderRadius:999, padding: `${rs(11)}px ${rs(16)}px` }}>
+        <div style={{ display:"flex", alignItems:"center", gap:8, background:"#fff",
+          borderRadius:999, padding: `${rs(11)}px ${rs(16)}px`, boxShadow:"0 4px 12px -8px rgba(14,35,72,.18)" }}>
           <svg width={rs(15)} height={rs(15)} viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke={L.muted} strokeWidth="2"/><path d="M21 21l-4-4" stroke={L.muted} strokeWidth="2" strokeLinecap="round"/></svg>
           <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search subjects, topics..."
             style={{ border:"none", outline:"none", fontSize: rs(11.5), color:L.ink, fontFamily:pf, flex:1, background:"transparent" }}/>
@@ -1787,29 +1834,33 @@ export default function MasterReviewAcademy() {
 
       <div style={{ margin: `${rs(12)}px ${rs(20)}px 0` }}>
         <div onClick={()=>{setMaster350(buildMaster350());setActiveQ("master");}} className="mra-hover-lift"
-          style={{ background:L.navy, borderRadius:rs(16), padding: `${rs(14)}px ${rs(16)}px`, cursor:"pointer", color:"#fff",
+          style={{ borderRadius:rs(18), padding: `${rs(14)}px ${rs(16)}px`, cursor:"pointer", color:"#fff", position:"relative", overflow:"hidden",
+            background:"linear-gradient(150deg,#12295A 0%, #0E2348 55%, #0A1B3A 100%)",
             display:"flex", alignItems:"center", justifyContent:"space-between", gap:10 }}>
-          <div>
+          <div style={{ position:"absolute", right:rs(-40), top:rs(-50), width:rs(190), height:rs(190), borderRadius:"50%",
+            background:"radial-gradient(circle, rgba(240,186,72,.28) 0%, rgba(240,186,72,0) 70%)" }}/>
+          <div style={{ position:"relative" }}>
             <div style={{ fontSize: rs(9), color:L.gold, letterSpacing:1, textTransform:"uppercase", fontWeight:700, marginBottom:4 }}>Comprehensive Exam</div>
             <div style={{ fontSize: rs(13), fontWeight:700 }}>Master Board Exam — 350Q</div>
             {getData("master") && <div style={{ fontSize: rs(10), color:"#c9d2e2", marginTop:3 }}>Last: {getData("master").score}%</div>}
           </div>
-          <div style={{ fontSize: rs(10.5), fontWeight:700, color:L.navy, background:L.gold, padding: `${rs(8)}px ${rs(12)}px`, borderRadius:999, flex:"none" }}>Start →</div>
+          <div style={{ fontSize: rs(10.5), fontWeight:700, color:"#4A2E00", background:"linear-gradient(135deg,#F7D488,#F0BA48)",
+            padding: `${rs(8)}px ${rs(12)}px`, borderRadius:999, flex:"none", position:"relative" }}>Start →</div>
         </div>
       </div>
 
       <div style={{ margin: `${rs(15)}px ${rs(20)}px 0` }}>
-        <div style={{ background:L.card, borderRadius:rs(22), boxShadow:"0 3px 10px -4px rgba(14,35,72,.10)",
-          border:`1px solid ${L.line}`, overflow:"hidden" }}>
+        <div style={{ background:L.card, borderRadius:rs(20), boxShadow:"0 8px 22px -12px rgba(14,35,72,.14)",
+          border:`1px solid #EEF0F4`, overflow:"hidden" }}>
           {filtered.length===0 && <div style={{ padding:24, textAlign:"center", fontSize:12, color:L.muted }}>No quizzes match your search.</div>}
           {filtered.map((quiz,i) => {
             const data = getData(quiz.id);
-            const tint = data ? `${quiz.color}22` : L.bg;
             return (
               <div key={quiz.id} onClick={()=>setActiveQ(quiz.id)} style={{ display:"flex", alignItems:"center", gap: rs(12), padding: rs(14), cursor:"pointer",
-                borderTop: i>0 ? `1px solid ${L.line}` : "none" }}>
-                <div style={{ width: rs(42), height: rs(42), borderRadius:12, flex:"none", background:tint,
-                  display:"flex", alignItems:"center", justifyContent:"center" }}><SubjIcon subjId={quiz.subjId} color={quiz.color} size={rs(20)}/></div>
+                borderTop: i>0 ? `1px solid #EEF0F4` : "none" }}>
+                <IconBadge color={quiz.color} size={rs(42)} radius={rs(13)}>
+                  <SubjIcon subjId={quiz.subjId} color="url(#lumenIconGrad)" size={rs(20)}/>
+                </IconBadge>
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ fontSize: rs(12.5), fontWeight:600, color:L.ink, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
                     {quiz.title.split("—")[0].trim()}
@@ -1846,13 +1897,21 @@ export default function MasterReviewAcademy() {
       <div style={{ margin: `${rs(15)}px ${rs(20)}px 0`, display:"grid",
         gridTemplateColumns:"1fr 1fr", gap: rs(10) }}>
         {[
-          { v:questionsAnswered.toLocaleString(), l:"Questions Answered", icon:<svg width={rs(26)} height={rs(26)} viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke={L.blue} strokeWidth="1.6"/><path d="M12 7v5l4 2" stroke={L.blue} strokeWidth="1.6" strokeLinecap="round"/></svg> },
-          { v:totalMastery()+"%", l:"Overall Mastery", icon:<svg width={rs(26)} height={rs(26)} viewBox="0 0 24 24" fill="none"><path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4L12 2z" stroke={L.green} strokeWidth="1.4" strokeLinejoin="round"/></svg> },
-          { v:streak+" Day"+(streak===1?"":"s"), l:"Current Streak", icon:<svg width={rs(26)} height={rs(26)} viewBox="0 0 24 24" fill="none"><path d="M12 2c3 4-2 5-2 9a4 4 0 108 0c0-1.5-.6-2.3-1.2-3.1.4 2-1 3-1.8 2C16 8 15 5 12 2z" fill={L.orange}/></svg> },
-          { v:`${completedCount}/${QUIZ_REGISTRY.length}`, l:"Quizzes Completed", icon:<svg width={rs(26)} height={rs(26)} viewBox="0 0 24 24" fill="none"><path d="M12 2l3 6 6.5.9-4.7 4.6L18 20l-6-3.4L6 20l1.2-6.5L2.5 8.9 9 8l3-6z" fill={L.purple}/></svg> },
+          { v:questionsAnswered.toLocaleString(), l:"Questions Answered", color:L.blue,
+            icon:<svg width={rs(16)} height={rs(16)} viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="url(#lumenIconGrad)" strokeWidth="2.2"/><path d="M12 7v5l4 2" stroke="url(#lumenIconGrad)" strokeWidth="2.2" strokeLinecap="round"/></svg> },
+          { v:totalMastery()+"%", l:"Overall Mastery", color:L.green,
+            icon:<svg width={rs(16)} height={rs(16)} viewBox="0 0 24 24" fill="none"><path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4L12 2z" stroke="url(#lumenIconGrad)" strokeWidth="2" strokeLinejoin="round"/></svg> },
+          { v:streak+" Day"+(streak===1?"":"s"), l:"Current Streak", gold:true,
+            icon:<svg width={rs(16)} height={rs(16)} viewBox="0 0 24 24" fill="none"><path d="M12 2c3 4-2 5-2 9a4 4 0 108 0c0-1.5-.6-2.3-1.2-3.1.4 2-1 3-1.8 2C16 8 15 5 12 2z" fill="#4A2E00"/></svg> },
+          { v:`${completedCount}/${QUIZ_REGISTRY.length}`, l:"Quizzes Completed", color:L.purple,
+            icon:<svg width={rs(16)} height={rs(16)} viewBox="0 0 24 24" fill="none"><path d="M12 2l3 6 6.5.9-4.7 4.6L18 20l-6-3.4L6 20l1.2-6.5L2.5 8.9 9 8l3-6z" fill="url(#lumenIconGrad)"/></svg> },
         ].map(t => (
-          <div key={t.l} className="mra-hover-lift" style={{ background:"#fff", border:`1px solid ${L.line}`, borderRadius:rs(16), padding: rs(14) }}>
-            <div style={{ marginBottom:8 }}>{t.icon}</div>
+          <div key={t.l} className="mra-hover-lift" style={{
+            background: t.gold ? "linear-gradient(160deg,#FFF7E8,#FDEDC9)" : "#fff",
+            border: t.gold ? "1px solid rgba(240,186,72,.35)" : "1px solid #EEF0F4",
+            borderRadius:rs(16), padding: rs(14), boxShadow:"0 6px 16px -10px rgba(14,35,72,.16)" }}>
+            <div style={{ width:rs(30), height:rs(30), borderRadius:rs(10), marginBottom:8, display:"flex", alignItems:"center", justifyContent:"center",
+              background: t.gold ? "linear-gradient(135deg,#F7D488,#F0BA48)" : `linear-gradient(135deg, ${shade(t.color,.35)} 0%, ${shade(t.color,-.35)} 100%)` }}>{t.icon}</div>
             <div style={{ fontSize: rs(17), fontWeight:700, color:L.ink }}>{t.v}</div>
             <div style={{ fontSize: rs(9.5), color:L.muted, marginTop:2 }}>{t.l}</div>
           </div>
@@ -1860,35 +1919,34 @@ export default function MasterReviewAcademy() {
       </div>
 
       <div style={{ margin: `${rs(12)}px ${rs(20)}px 0` }}>
-        <div className="mra-hover-lift" style={{ background:"#fff", border:`1px solid ${L.line}`, borderRadius:rs(16), padding: `${rs(14)}px ${rs(18)}px` }}>
+        <div className="mra-hover-lift" style={{ background:"#fff", border:`1px solid #EEF0F4`, borderRadius:rs(16), padding: `${rs(14)}px ${rs(18)}px`, boxShadow:"0 6px 16px -10px rgba(14,35,72,.16)" }}>
           <div style={{ fontSize: rs(13.5), fontWeight:600, color:L.ink, marginBottom:2 }}>Subject Performance</div>
           <div onClick={()=>{setFilterS("all-prof");setView("library");}} style={{ display:"flex", alignItems:"center", gap: rs(10), padding: `${rs(10)}px 0`, cursor:"pointer" }}>
-            <div style={{ width: rs(9), height: rs(9), borderRadius:"50%", background:L.green, flex:"none" }}/>
+            <div style={{ width: rs(9), height: rs(9), borderRadius:"50%", background:`linear-gradient(135deg, ${shade(L.green,.35)}, ${L.green})`, flex:"none" }}/>
             <div style={{ fontSize: rs(10.5), color:L.ink, width: rs(110), flex:"none" }}>Professional Ed</div>
-            <div style={{ flex:1, height: rs(7), borderRadius:4, background:L.line, overflow:"hidden" }}><div style={{ height:"100%", width:`${avgOf(profSubset)}%`, background:L.green, borderRadius:4 }}/></div>
+            <div style={{ flex:1, height: rs(7), borderRadius:4, background:L.line, overflow:"hidden" }}><div style={{ height:"100%", width:`${avgOf(profSubset)}%`, background:`linear-gradient(90deg, ${shade(L.green,.35)}, ${L.green})`, borderRadius:4 }}/></div>
             <div style={{ fontSize: rs(10.5), fontWeight:700, color:L.ink, width: rs(32), textAlign:"right", flex:"none" }}>{avgOf(profSubset)}%</div>
           </div>
           <div onClick={()=>{setFilterS("all-gened");setView("library");}} style={{ display:"flex", alignItems:"center", gap: rs(10), padding: `${rs(10)}px 0`, cursor:"pointer" }}>
-            <div style={{ width: rs(9), height: rs(9), borderRadius:"50%", background:L.purple, flex:"none" }}/>
+            <div style={{ width: rs(9), height: rs(9), borderRadius:"50%", background:`linear-gradient(135deg, ${shade(L.purple,.35)}, ${L.purple})`, flex:"none" }}/>
             <div style={{ fontSize: rs(10.5), color:L.ink, width: rs(110), flex:"none" }}>General Ed</div>
-            <div style={{ flex:1, height: rs(7), borderRadius:4, background:L.line, overflow:"hidden" }}><div style={{ height:"100%", width:`${avgOf(genSubset)}%`, background:L.purple, borderRadius:4 }}/></div>
+            <div style={{ flex:1, height: rs(7), borderRadius:4, background:L.line, overflow:"hidden" }}><div style={{ height:"100%", width:`${avgOf(genSubset)}%`, background:`linear-gradient(90deg, ${shade(L.purple,.35)}, ${L.purple})`, borderRadius:4 }}/></div>
             <div style={{ fontSize: rs(10.5), fontWeight:700, color:L.ink, width: rs(32), textAlign:"right", flex:"none" }}>{avgOf(genSubset)}%</div>
           </div>
         </div>
       </div>
 
       <div style={{ margin: `${rs(12)}px ${rs(20)}px 0` }}>
-        <div className="mra-hover-lift" style={{ background:"#fff", border:`1px solid ${L.line}`, borderRadius:rs(16), padding: `${rs(14)}px ${rs(18)}px` }}>
+        <div className="mra-hover-lift" style={{ background:"#fff", border:`1px solid #EEF0F4`, borderRadius:rs(16), padding: `${rs(14)}px ${rs(18)}px`, boxShadow:"0 6px 16px -10px rgba(14,35,72,.16)" }}>
           <div style={{ fontSize: rs(13.5), fontWeight:600, color:L.ink, marginBottom:12 }}>All Quizzes</div>
           {[...QUIZ_REGISTRY, {id:"master",title:"Master Board Exam",color:L.navy}].map((quiz,i)=>{
             const data = getData(quiz.id);
             return (
               <div key={quiz.id} style={{ display:"flex", alignItems:"center", gap: rs(10), padding: `${rs(9)}px 0`,
-                borderTop: i>0 ? `1px solid ${L.line}` : "none" }}>
-                <div style={{ width: rs(30), height: rs(30), borderRadius:9, background:`${quiz.color}22`, display:"flex",
-                  alignItems:"center", justifyContent:"center", flex:"none" }}>
-                  {quiz.id==="master" ? <TrophyIcon color={L.navy} size={rs(16)}/> : <SubjIcon subjId={quiz.subjId} color={quiz.color} size={rs(16)}/>}
-                </div>
+                borderTop: i>0 ? `1px solid #EEF0F4` : "none" }}>
+                <IconBadge color={quiz.color} size={rs(30)} radius={rs(10)}>
+                  {quiz.id==="master" ? <TrophyIcon color="url(#lumenIconGrad)" size={rs(16)}/> : <SubjIcon subjId={quiz.subjId} color="url(#lumenIconGrad)" size={rs(16)}/>}
+                </IconBadge>
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ fontSize: rs(11), fontWeight:600, color:L.ink, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{quiz.title}</div>
                   <div style={{ height:3, borderRadius:2, background:L.line, marginTop:5, overflow:"hidden" }}><div style={{ height:"100%", width:`${data?.score||0}%`, background:quiz.color, borderRadius:2 }}/></div>
@@ -1903,14 +1961,15 @@ export default function MasterReviewAcademy() {
       </div>
 
       <div style={{ margin: `${rs(12)}px ${rs(20)}px 0` }}>
-        <div className="mra-hover-lift" style={{ background:"#fff", border:`1px solid ${L.line}`, borderRadius:rs(16), padding: `${rs(14)}px ${rs(18)}px` }}>
+        <div className="mra-hover-lift" style={{ background:"#fff", border:`1px solid #EEF0F4`, borderRadius:rs(16), padding: `${rs(14)}px ${rs(18)}px`, boxShadow:"0 6px 16px -10px rgba(14,35,72,.16)" }}>
           <div style={{ fontSize: rs(13.5), fontWeight:600, color:L.ink, marginBottom:10 }}>Study Recommendations</div>
           {QUIZ_REGISTRY.filter(q=>!getData(q.id)||(getData(q.id)?.score||0)<80).length > 0 ? (
             QUIZ_REGISTRY.filter(q=>!getData(q.id)||(getData(q.id)?.score||0)<80).map((quiz,i)=>(
               <div key={quiz.id} style={{ display:"flex", alignItems:"center", gap: rs(10), padding: `${rs(9)}px 0`,
-                borderTop: i>0 ? `1px solid ${L.line}` : "none" }}>
-                <div style={{ width: rs(28), height: rs(28), borderRadius:8, background:`${quiz.color}22`, display:"flex",
-                  alignItems:"center", justifyContent:"center", flex:"none" }}><SubjIcon subjId={quiz.subjId} color={quiz.color} size={rs(15)}/></div>
+                borderTop: i>0 ? `1px solid #EEF0F4` : "none" }}>
+                <IconBadge color={quiz.color} size={rs(28)} radius={rs(9)}>
+                  <SubjIcon subjId={quiz.subjId} color="url(#lumenIconGrad)" size={rs(15)}/>
+                </IconBadge>
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ fontSize: rs(11), fontWeight:600, color:L.ink }}>{quiz.title}</div>
                   <div style={{ fontSize: rs(9.5), color:L.muted, marginTop:2 }}>{getData(quiz.id)?`Score: ${getData(quiz.id).score}% → Target: 80%+`:"Not yet attempted"}</div>
@@ -1945,13 +2004,17 @@ export default function MasterReviewAcademy() {
       <MascotStrip message="Ready when you are — you've got this!" scale={S}/>
 
       <div style={{ margin: `${rs(15)}px ${rs(20)}px 0` }}>
-        <div className="mra-hover-lift" style={{ background:L.navy, borderRadius:rs(22), padding: rs(20), color:"#fff" }}>
-          <div style={{ fontSize: rs(14.5), fontWeight:600, marginBottom: rs(16) }}>Exam Readiness</div>
-          <div style={{ display:"flex", alignItems:"center", gap: rs(18) }}>
+        <div className="mra-hover-lift" style={{ borderRadius:rs(24), padding: rs(20), color:"#fff", position:"relative", overflow:"hidden",
+          background:"linear-gradient(150deg,#12295A 0%, #0E2348 55%, #0A1B3A 100%)" }}>
+          <div style={{ position:"absolute", right:rs(-40), top:rs(-50), width:rs(200), height:rs(200), borderRadius:"50%",
+            background:"radial-gradient(circle, rgba(240,186,72,.30) 0%, rgba(240,186,72,0) 70%)" }}/>
+          <div style={{ fontSize: rs(14.5), fontWeight:600, marginBottom: rs(16), position:"relative" }}>Exam Readiness</div>
+          <div style={{ display:"flex", alignItems:"center", gap: rs(18), position:"relative" }}>
             <div style={{ width: rs(100), height: rs(100), borderRadius:"50%", flex:"none",
-              background:`conic-gradient(${L.gold} 0deg ${totalMastery()*3.6}deg, rgba(255,255,255,.14) ${totalMastery()*3.6}deg 360deg)`,
+              background:`conic-gradient(from -90deg, #F7D488 0deg, ${L.gold} ${totalMastery()*3.6}deg, rgba(255,255,255,.14) ${totalMastery()*3.6}deg 360deg)`,
+              filter:"drop-shadow(0 4px 10px rgba(240,186,72,.35))",
               display:"flex", alignItems:"center", justifyContent:"center", position:"relative" }}>
-              <div style={{ position:"absolute", inset: rs(11), borderRadius:"50%", background:L.navy }}/>
+              <div style={{ position:"absolute", inset: rs(11), borderRadius:"50%", background:"#132C56" }}/>
               <div style={{ position:"relative", textAlign:"center" }}>
                 <div style={{ fontSize: rs(20), fontWeight:700 }}>{totalMastery()}%</div>
                 <div style={{ fontSize: rs(8.5), color:"#c9d2e2", marginTop:1 }}>Ready</div>
@@ -1970,23 +2033,23 @@ export default function MasterReviewAcademy() {
 
       <div style={{ margin: `${rs(15)}px ${rs(20)}px 0` }}>
         <div onClick={()=>{setMaster350(buildMaster350());setActiveQ("master");}} className="mra-hover-btn"
-          style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:8, background:L.gold, color:L.navy,
+          style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:8, background:"linear-gradient(135deg,#F7D488,#F0BA48)", color:"#4A2E00",
             fontSize: rs(13), fontWeight:700, padding: rs(14), borderRadius:rs(16), cursor:"pointer" }}>
-          <svg width={rs(16)} height={rs(16)} viewBox="0 0 24 24" fill="none"><path d="M5 3l14 9-14 9V3z" fill={L.navy}/></svg>
+          <svg width={rs(16)} height={rs(16)} viewBox="0 0 24 24" fill="none"><path d="M5 3l14 9-14 9V3z" fill="#4A2E00"/></svg>
           Take Master Exam — 350Q
         </div>
       </div>
 
       <div style={{ margin: `${rs(12)}px ${rs(20)}px 0` }}>
         <div style={{ fontSize: rs(13.5), fontWeight:600, color:L.ink, marginBottom:10 }}>Practice Exams</div>
-        <div className="mra-hover-lift" style={{ background:"#fff", border:`1px solid ${L.line}`, borderRadius:rs(22) }}>
+        <div className="mra-hover-lift" style={{ background:"#fff", border:`1px solid #EEF0F4`, borderRadius:rs(20), boxShadow:"0 8px 22px -12px rgba(14,35,72,.14)" }}>
           {[
-            { name:"Full Mock Exam", meta:"350 items · All subjects", icon:<svg width={rs(20)} height={rs(20)} viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="18" rx="2" stroke={L.blue} strokeWidth="1.6"/><path d="M8 8h8M8 12h8M8 16h5" stroke={L.blue} strokeWidth="1.6" strokeLinecap="round"/></svg>, tint:L.blueTint, action:()=>{setMaster350(buildMaster350());setActiveQ("master");} },
-            { name:"Professional Education Set", meta:`${profSubset.reduce((a,q)=>a+q.questions.length,0)} items · 3 quizzes`, icon:<svg width={rs(20)} height={rs(20)} viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke={L.orange} strokeWidth="1.6"/><path d="M12 7v5l4 2" stroke={L.orange} strokeWidth="1.6" strokeLinecap="round"/></svg>, tint:L.orangeTint, action:()=>{setFilterS("all-prof");setView("library");} },
-            { name:"General Education Set", meta:`${genSubset.reduce((a,q)=>a+q.questions.length,0)} items · 9 quizzes`, icon:<svg width={rs(20)} height={rs(20)} viewBox="0 0 24 24" fill="none"><path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4L12 2z" stroke={L.purple} strokeWidth="1.4" strokeLinejoin="round"/></svg>, tint:L.purpleTint, action:()=>{setFilterS("all-gened");setView("library");} },
+            { name:"Full Mock Exam", meta:"350 items · All subjects", color:L.blue, icon:<svg width={rs(19)} height={rs(19)} viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="18" rx="2" stroke="url(#lumenIconGrad)" strokeWidth="2.2"/><path d="M8 8h8M8 12h8M8 16h5" stroke="url(#lumenIconGrad)" strokeWidth="2.2" strokeLinecap="round"/></svg>, action:()=>{setMaster350(buildMaster350());setActiveQ("master");} },
+            { name:"Professional Education Set", meta:`${profSubset.reduce((a,q)=>a+q.questions.length,0)} items · 3 quizzes`, color:L.orange, icon:<svg width={rs(19)} height={rs(19)} viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="url(#lumenIconGrad)" strokeWidth="2.2"/><path d="M12 7v5l4 2" stroke="url(#lumenIconGrad)" strokeWidth="2.2" strokeLinecap="round"/></svg>, action:()=>{setFilterS("all-prof");setView("library");} },
+            { name:"General Education Set", meta:`${genSubset.reduce((a,q)=>a+q.questions.length,0)} items · 9 quizzes`, color:L.purple, icon:<svg width={rs(19)} height={rs(19)} viewBox="0 0 24 24" fill="none"><path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4L12 2z" stroke="url(#lumenIconGrad)" strokeWidth="2" strokeLinejoin="round"/></svg>, action:()=>{setFilterS("all-gened");setView("library");} },
           ].map((e,i)=>(
-            <div key={e.name} style={{ display:"flex", alignItems:"center", gap: rs(12), padding: rs(14), borderTop: i>0?`1px solid ${L.line}`:"none" }}>
-              <div style={{ width: rs(44), height: rs(44), borderRadius:12, flex:"none", background:e.tint, display:"flex", alignItems:"center", justifyContent:"center" }}>{e.icon}</div>
+            <div key={e.name} style={{ display:"flex", alignItems:"center", gap: rs(12), padding: rs(14), borderTop: i>0?`1px solid #EEF0F4`:"none" }}>
+              <IconBadge color={e.color} size={rs(44)} radius={rs(13)}>{e.icon}</IconBadge>
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ fontSize: rs(12.5), fontWeight:600, color:L.ink }}>{e.name}</div>
                 <div style={{ fontSize: rs(9.5), color:L.muted, marginTop:3 }}>{e.meta}</div>
@@ -2007,9 +2070,12 @@ export default function MasterReviewAcademy() {
     return shell("profile", (
     <>
       <div style={{ display:"flex", flexDirection:"column", alignItems:"center", padding: `${rs(8)}px ${rs(20)}px ${rs(4)}px`, textAlign:"center" }}>
-        <div style={{ width: rs(76), height: rs(76), borderRadius:"50%", background:L.navy, display:"flex", alignItems:"center",
-          justifyContent:"center", color:L.gold, fontSize: rs(24), fontWeight:700, border:`3px solid ${L.gold}` }}>
-          {(user||"?").slice(0,2).toUpperCase()}
+        <div style={{ width: rs(76), height: rs(76), borderRadius:"50%", padding:3,
+          background:"linear-gradient(135deg,#F7D488,#F0BA48)" }}>
+          <div style={{ width:"100%", height:"100%", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center",
+            background:"linear-gradient(150deg,#12295A,#0A1B3A)", color:L.gold, fontSize: rs(24), fontWeight:700 }}>
+            {(user||"?").slice(0,2).toUpperCase()}
+          </div>
         </div>
         <h2 style={{ fontSize: rs(16), fontWeight:700, color:L.ink, marginTop:10 }}>{user}</h2>
         <p style={{ fontSize: rs(10.5), color:L.muted, marginTop:2 }}>{isAdmin ? "Administrator" : "Future Teacher"}</p>
@@ -2017,13 +2083,13 @@ export default function MasterReviewAcademy() {
 
       <MascotStrip message="Great to see you here again!" scale={S}/>
 
-      <div style={{ display:"flex", margin: `${rs(14)}px ${rs(20)}px 0`, background:"#fff", border:`1px solid ${L.line}`, borderRadius:16, overflow:"hidden" }}>
+      <div style={{ display:"flex", margin: `${rs(14)}px ${rs(20)}px 0`, background:"#fff", border:`1px solid #EEF0F4`, borderRadius:16, overflow:"hidden", boxShadow:"0 6px 16px -10px rgba(14,35,72,.16)" }}>
         {[
           { n:streak, l:"Day Streak" },
           { n:completedCount, l:"Quizzes Done" },
           { n:totalMastery()+"%", l:"Mastery" },
         ].map((s,i)=>(
-          <div key={s.l} style={{ flex:1, textAlign:"center", padding: `${rs(12)}px ${rs(4)}px`, borderLeft: i>0?`1px solid ${L.line}`:"none" }}>
+          <div key={s.l} style={{ flex:1, textAlign:"center", padding: `${rs(12)}px ${rs(4)}px`, borderLeft: i>0?`1px solid #EEF0F4`:"none" }}>
             <div style={{ fontSize: rs(15), fontWeight:700, color:L.ink }}>{s.n}</div>
             <div style={{ fontSize: rs(8.5), color:L.muted, marginTop:2 }}>{s.l}</div>
           </div>
@@ -2031,20 +2097,27 @@ export default function MasterReviewAcademy() {
       </div>
 
       <div style={{ margin: `${rs(15)}px ${rs(20)}px 0` }}>
-        <div className="mra-hover-lift" style={{ background:"#fff", border:`1px solid ${L.line}`, borderRadius:16 }}>
+        <div className="mra-hover-lift" style={{ background:"#fff", border:`1px solid #EEF0F4`, borderRadius:16, boxShadow:"0 6px 16px -10px rgba(14,35,72,.16)" }}>
           {[
-            { label:"Library", action:()=>setView("library") },
-            { label:"Dashboard", action:()=>setView("dashboard") },
-            ...(isAdmin ? [{ label:"Admin Panel", action:()=>setView("admin"), color:L.blue }] : []),
+            { label:"Library", action:()=>setView("library"), color:L.blue,
+              icon:<svg width={rs(14)} height={rs(14)} viewBox="0 0 24 24" fill="none"><path d="M4 4h7v16H4z M13 4h7v16h-7z" stroke="url(#lumenIconGrad)" strokeWidth="1.9"/></svg> },
+            { label:"Dashboard", action:()=>setView("dashboard"), color:L.purple,
+              icon:<svg width={rs(14)} height={rs(14)} viewBox="0 0 24 24" fill="none"><path d="M4 20V13M11 20V7M18 20V10" stroke="url(#lumenIconGrad)" strokeWidth="2.2" strokeLinecap="round"/></svg> },
+            ...(isAdmin ? [{ label:"Admin Panel", action:()=>setView("admin"), color:L.blue,
+              icon:<svg width={rs(14)} height={rs(14)} viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z" stroke="url(#lumenIconGrad)" strokeWidth="1.9" strokeLinejoin="round"/></svg> }] : []),
           ].map((m,i)=>(
-            <div key={m.label} onClick={m.action} style={{ display:"flex", alignItems:"center", gap:12, padding: `${rs(13)}px ${rs(14)}px`,
-              cursor:"pointer", borderTop: i>0?`1px solid ${L.line}`:"none" }}>
-              <div style={{ flex:1, fontSize: rs(11.5), fontWeight:600, color:m.color||L.ink }}>{m.label}</div>
+            <div key={m.label} onClick={m.action} style={{ display:"flex", alignItems:"center", gap: rs(11), padding: `${rs(13)}px ${rs(14)}px`,
+              cursor:"pointer", borderTop: i>0?`1px solid #EEF0F4`:"none" }}>
+              <IconBadge color={m.color} size={rs(30)} radius={rs(9)}>{m.icon}</IconBadge>
+              <div style={{ flex:1, fontSize: rs(11.5), fontWeight:600, color:L.ink }}>{m.label}</div>
               <svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke={L.muted} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </div>
           ))}
-          <div onClick={handleLogout} style={{ display:"flex", alignItems:"center", gap:12, padding: `${rs(13)}px ${rs(14)}px`,
-            cursor:"pointer", borderTop:`1px solid ${L.line}` }}>
+          <div onClick={handleLogout} style={{ display:"flex", alignItems:"center", gap: rs(11), padding: `${rs(13)}px ${rs(14)}px`,
+            cursor:"pointer", borderTop:`1px solid #EEF0F4` }}>
+            <IconBadge color="#E5586B" size={rs(30)} radius={rs(9)}>
+              <svg width={rs(14)} height={rs(14)} viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="url(#lumenIconGrad)" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </IconBadge>
             <div style={{ flex:1, fontSize: rs(11.5), fontWeight:600, color:"#E5484D" }}>Log Out</div>
           </div>
         </div>
