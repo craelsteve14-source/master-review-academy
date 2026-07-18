@@ -553,7 +553,7 @@ function Sidebar({ active, onNav, user, isAdmin, onAdmin, onLogout, streak, mast
       display: "flex", flexDirection: "column", padding: "26px 0",
       backgroundImage: "radial-gradient(circle at 15% -10%, rgba(240,186,72,.14), transparent 45%)" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 22px 28px" }}>
-        <svg width="30" height="26" viewBox="0 0 26 22" style={{ flex: "none" }}><path d="M13 0L26 5.5L13 11L0 5.5L13 0Z" fill={L.gold}/><path d="M6 8V14C6 14 9 17 13 17C17 17 20 14 20 14V8L13 11L6 8Z" fill={L.gold}/></svg>
+        <img src="/splash-icon-gold.png" alt="Lumen" width="30" height="30" style={{ flex: "none", display: "block" }}/>
         <div style={{ lineHeight: 1.2 }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", letterSpacing: ".2px" }}>LUMEN</div>
           <div style={{ fontSize: 9.5, color: "#8a93a8", letterSpacing: "1px" }}>LET REVIEW</div>
@@ -614,7 +614,7 @@ function LHeader({ user, streak = 0, onMenu, onBell }) {
         <svg width="19" height="14" viewBox="0 0 20 14"><rect y="0" width="20" height="2" rx="1" fill={L.ink}/><rect y="6" width="20" height="2" rx="1" fill={L.ink}/><rect y="12" width="20" height="2" rx="1" fill={L.ink}/></svg>
       </button>
       <div style={{ display:"flex", alignItems:"center", gap:8, flex:1, minWidth:0 }}>
-        <svg width="24" height="22" viewBox="0 0 26 22" style={{ flex:"none" }}><path d="M13 0L26 5.5L13 11L0 5.5L13 0Z" fill={L.navy}/><path d="M6 8V14C6 14 9 17 13 17C17 17 20 14 20 14V8L13 11L6 8Z" fill={L.navy}/><path d="M23 6.5V13" stroke={L.gold} strokeWidth="1.4"/><circle cx="23" cy="14" r="1.6" fill={L.gold}/></svg>
+        <img src="/splash-icon.png" alt="Lumen" width="24" height="24" style={{ flex:"none", display:"block" }}/>
         <div style={{ lineHeight:1.15, minWidth:0 }}>
           <div style={{ fontSize:12, fontWeight:700, letterSpacing:.2, color:L.ink, whiteSpace:"nowrap" }}>LUMEN</div>
           <div style={{ fontSize:8, color:L.muted, whiteSpace:"nowrap" }}>Your Journey. Our Guidance. Your Success.</div>
@@ -936,7 +936,7 @@ function AuthScreen({ onLogin }) {
           gap: 6, overflow: "hidden", marginBottom: rs(18), minHeight: rs(160) }}>
           <div style={{ flex: 1, minWidth: 0, paddingBottom: rs(20) }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-              <svg width={rs(22)} height={rs(19)} viewBox="0 0 26 22"><path d="M13 0L26 5.5L13 11L0 5.5L13 0Z" fill={L.navy}/><path d="M6 8V14C6 14 9 17 13 17C17 17 20 14 20 14V8L13 11L6 8Z" fill={L.navy}/></svg>
+              <img src="/splash-icon.png" alt="Lumen" width={rs(22)} height={rs(22)} style={{ display: "block" }}/>
               <span style={{ fontSize: rs(11), fontWeight: 700, letterSpacing: ".4px", color: L.navy, textTransform: "uppercase" }}>Lumen</span>
             </div>
             <h1 style={{ fontSize: rs(19), fontWeight: 700, color: L.ink, lineHeight: 1.28, margin: 0 }}>
@@ -1900,7 +1900,11 @@ export default function MasterReviewAcademy() {
     const subjCards = (
       <div style={{ display:"flex", gap: rs(8) }}>
         <div onClick={()=>{setFilterS("all-prof");setView("library");}} className="mra-hover-lift" style={{ flex:1, minWidth:0, borderRadius:rs(18), padding: `${rs(12)}px ${rs(6)}px ${rs(10)}px`,
-          textAlign:"center", background:"linear-gradient(160deg,#EFFAF2,#E1F3E5)", cursor:"pointer" }}>
+          textAlign:"center", background:"linear-gradient(160deg,#EFFAF2,#E1F3E5)", cursor:"pointer", position:"relative" }}>
+          <div style={{ position:"absolute", top:rs(8), right:rs(8), width:rs(15), height:rs(15), borderRadius:"50%",
+            background:"rgba(255,255,255,.65)", display:"flex", alignItems:"center", justifyContent:"center", boxShadow:"0 1px 3px rgba(0,0,0,.12)" }}>
+            <img src="/splash-icon.png" alt="" width={rs(10)} height={rs(10)}/>
+          </div>
           <IconBadge color={L.green} size={rs(38)} radius={rs(12)} style={{ margin:"0 auto", boxShadow:`0 ${rs(6)}px ${rs(14)}px -${rs(6)}px rgba(30,164,87,.55)` }}>
             <CategoryIcon type="prof" color="url(#lumenIconGrad)" size={rs(19)}/>
           </IconBadge>
@@ -1909,7 +1913,11 @@ export default function MasterReviewAcademy() {
           <div style={{ fontSize: rs(8.5), color:L.muted, marginTop:2 }}>{profSubset.length} quizzes</div>
         </div>
         <div onClick={()=>{setFilterS("all-gened");setView("library");}} className="mra-hover-lift" style={{ flex:1, minWidth:0, borderRadius:rs(18), padding: `${rs(12)}px ${rs(6)}px ${rs(10)}px`,
-          textAlign:"center", background:"linear-gradient(160deg,#F9F0FD,#F0E1FA)", cursor:"pointer" }}>
+          textAlign:"center", background:"linear-gradient(160deg,#F9F0FD,#F0E1FA)", cursor:"pointer", position:"relative" }}>
+          <div style={{ position:"absolute", top:rs(8), right:rs(8), width:rs(15), height:rs(15), borderRadius:"50%",
+            background:"rgba(255,255,255,.65)", display:"flex", alignItems:"center", justifyContent:"center", boxShadow:"0 1px 3px rgba(0,0,0,.12)" }}>
+            <img src="/splash-icon.png" alt="" width={rs(10)} height={rs(10)}/>
+          </div>
           <IconBadge color={L.purple} size={rs(38)} radius={rs(12)} style={{ margin:"0 auto", boxShadow:`0 ${rs(6)}px ${rs(14)}px -${rs(6)}px rgba(180,91,246,.55)` }}>
             <CategoryIcon type="gened" color="url(#lumenIconGrad)" size={rs(19)}/>
           </IconBadge>
