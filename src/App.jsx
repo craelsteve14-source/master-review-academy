@@ -1900,7 +1900,11 @@ export default function MasterReviewAcademy() {
     const subjCards = (
       <div style={{ display:"flex", gap: rs(8) }}>
         <div onClick={()=>{setFilterS("all-prof");setView("library");}} className="mra-hover-lift" style={{ flex:1, minWidth:0, borderRadius:rs(18), padding: `${rs(12)}px ${rs(6)}px ${rs(10)}px`,
-          textAlign:"center", background:"linear-gradient(160deg,#EFFAF2,#E1F3E5)", cursor:"pointer" }}>
+          textAlign:"center", background:"linear-gradient(160deg,#EFFAF2,#E1F3E5)", cursor:"pointer", position:"relative" }}>
+          <div style={{ position:"absolute", top:rs(8), right:rs(8), width:rs(15), height:rs(15), borderRadius:"50%",
+            background:"rgba(255,255,255,.65)", display:"flex", alignItems:"center", justifyContent:"center", boxShadow:"0 1px 3px rgba(0,0,0,.12)" }}>
+            <img src="/splash-icon.png" alt="" width={rs(10)} height={rs(10)}/>
+          </div>
           <IconBadge color={L.green} size={rs(38)} radius={rs(12)} style={{ margin:"0 auto", boxShadow:`0 ${rs(6)}px ${rs(14)}px -${rs(6)}px rgba(30,164,87,.55)` }}>
             <CategoryIcon type="prof" color="url(#lumenIconGrad)" size={rs(19)}/>
           </IconBadge>
@@ -1909,7 +1913,11 @@ export default function MasterReviewAcademy() {
           <div style={{ fontSize: rs(8.5), color:L.muted, marginTop:2 }}>{profSubset.length} quizzes</div>
         </div>
         <div onClick={()=>{setFilterS("all-gened");setView("library");}} className="mra-hover-lift" style={{ flex:1, minWidth:0, borderRadius:rs(18), padding: `${rs(12)}px ${rs(6)}px ${rs(10)}px`,
-          textAlign:"center", background:"linear-gradient(160deg,#F9F0FD,#F0E1FA)", cursor:"pointer" }}>
+          textAlign:"center", background:"linear-gradient(160deg,#F9F0FD,#F0E1FA)", cursor:"pointer", position:"relative" }}>
+          <div style={{ position:"absolute", top:rs(8), right:rs(8), width:rs(15), height:rs(15), borderRadius:"50%",
+            background:"rgba(255,255,255,.65)", display:"flex", alignItems:"center", justifyContent:"center", boxShadow:"0 1px 3px rgba(0,0,0,.12)" }}>
+            <img src="/splash-icon.png" alt="" width={rs(10)} height={rs(10)}/>
+          </div>
           <IconBadge color={L.purple} size={rs(38)} radius={rs(12)} style={{ margin:"0 auto", boxShadow:`0 ${rs(6)}px ${rs(14)}px -${rs(6)}px rgba(180,91,246,.55)` }}>
             <CategoryIcon type="gened" color="url(#lumenIconGrad)" size={rs(19)}/>
           </IconBadge>
