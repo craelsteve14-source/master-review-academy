@@ -1552,6 +1552,26 @@ export default function MasterReviewAcademy() {
     pullCloudProgress(user).then(() => setSyncNonce(n => n + 1)).catch(() => {});
   }, [user]); // eslint-disable-line
 
+  // Re-sync whenever the app is switched back to (another device may have
+  // pushed new progress while this one sat open in the background) — the
+  // mount-only pull above misses that since it only fires once per session.
+  const resyncingRef = useRef(false);
+  useEffect(() => {
+    if (!user) return;
+    const resync = () => {
+      if (resyncingRef.current) return;
+      resyncingRef.current = true;
+      pullCloudProgress(user).then(() => setSyncNonce(n => n + 1)).finally(() => { resyncingRef.current = false; });
+    };
+    const onVisibility = () => { if (document.visibilityState === "visible") resync(); };
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("focus", resync);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("focus", resync);
+    };
+  }, [user]);
+
   function handleLogin(username, admin) {
     setUser(username); setIsAdmin(admin); setView(admin ? "dashboard" : "home");
   }
