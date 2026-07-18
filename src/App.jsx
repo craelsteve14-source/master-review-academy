@@ -93,17 +93,34 @@ async function pullCloudProgress(username) {
   } catch {}
 }
 
+// A single dropped request (mobile connection blip, tab backgrounded mid-
+// request, etc.) used to mean that push was gone for good until the next
+// lucky reconciliation pass. Retries a few times with backoff first so a
+// transient failure doesn't silently strand a result on one device.
+async function withRetry(fn, attempts = 3, delayMs = 700) {
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const { error } = await fn();
+      if (error) throw error;
+      return;
+    } catch (e) {
+      if (i === attempts - 1) throw e;
+      await new Promise(r => setTimeout(r, delayMs * (i + 1)));
+    }
+  }
+}
+
 async function pushQuizScore(quizId, score, total, correct, completedAt) {
   try {
     const { data: { user: authUser } } = await supabase.auth.getUser();
     if (!authUser) return;
-    await supabase.from("quiz_progress").upsert({
+    await withRetry(() => supabase.from("quiz_progress").upsert({
       user_id: authUser.id,
       quiz_id: quizId,
       score, total, correct,
       percentage: score,
       completed_at: completedAt || new Date().toISOString()
-    }, { onConflict: "user_id,quiz_id" });
+    }, { onConflict: "user_id,quiz_id" }));
   } catch {}
 }
 
@@ -111,7 +128,7 @@ async function pushProfileFields(fields) {
   try {
     const { data: { user: authUser } } = await supabase.auth.getUser();
     if (!authUser) return;
-    await supabase.from("profiles").update(fields).eq("id", authUser.id);
+    await withRetry(() => supabase.from("profiles").update(fields).eq("id", authUser.id));
   } catch {}
 }
 
@@ -124,13 +141,13 @@ async function pushQuizSession(quizId, order, idx, correct, wrong, missed) {
   try {
     const { data: { user: authUser } } = await supabase.auth.getUser();
     if (!authUser) return;
-    await supabase.from("quiz_sessions").upsert({
+    await withRetry(() => supabase.from("quiz_sessions").upsert({
       user_id: authUser.id,
       quiz_id: quizId,
       order_indices: order,
       idx, correct, wrong, missed,
       updated_at: new Date().toISOString()
-    }, { onConflict: "user_id,quiz_id" });
+    }, { onConflict: "user_id,quiz_id" }));
   } catch {}
 }
 
@@ -1268,18 +1285,20 @@ function QuizEngine({ rawQuestions, title, quizId, accentColor, onExit, username
   }
 
   function next() {
+    // correct/wrong are already up to date for the just-answered question —
+    // submit() incremented them before this button could even appear — so
+    // re-adding a point here would double-count the final answer.
     const ni = idx + 1;
     if (ni >= total) {
-      const fc = correct + (sel === getA(q) ? 1 : 0);
-      const score = Math.round(fc / total * 100);
-      storage.set(`quiz_${quizId}`, { score, correct: fc, total, date: new Date().toISOString() });
+      const score = Math.round(correct / total * 100);
+      storage.set(`quiz_${quizId}`, { score, correct, total, date: new Date().toISOString() });
       storage.set(progressKey, null);
       if (username) deleteQuizSession(quizId).catch(() => {});
       setPhase("results");
       return;
     }
     if (ni % every === 0) {
-      setCkpt({ ni, correct: correct + (sel===getA(q)?1:0), wrong: wrong+(sel!==getA(q)?1:0), acc });
+      setCkpt({ ni, correct, wrong, acc });
       setPhase("checkpoint");
     } else advance(ni);
   }
