@@ -1261,9 +1261,15 @@ function QuizEngine({ rawQuestions, title, quizId, accentColor, onExit, username
   // Save progress after every answered question so exiting mid-quiz resumes
   // where you left off instead of restarting at Question 1 — locally and,
   // for a signed-in user, on any device they next open this same quiz on.
+  // Waits for the cloud-progress check below to land first: writing a local
+  // "question 0" snapshot immediately on mount would stamp it with the
+  // current time, which can then look newer than a further-along attempt
+  // from another device and win Home's "most recent" comparison — showing
+  // 0 progress and a Resume button that reopens at question 1.
   useEffect(() => {
+    if (username && !cloudChecked) return;
     storage.set(progressKey, { questions, idx, correct, wrong, missed, date: new Date().toISOString() });
-    if (username && cloudChecked) pushQuizSession(quizId, order, idx, correct, wrong, missed).catch(() => {});
+    if (username) pushQuizSession(quizId, order, idx, correct, wrong, missed).catch(() => {});
   }, [idx, correct, wrong, missed, cloudChecked]); // eslint-disable-line
 
   // On open, check whether another device got further into this exact quiz
