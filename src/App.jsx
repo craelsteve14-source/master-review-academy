@@ -614,7 +614,7 @@ function LHeader({ user, streak = 0, onMenu, onBell }) {
         <svg width="19" height="14" viewBox="0 0 20 14"><rect y="0" width="20" height="2" rx="1" fill={L.ink}/><rect y="6" width="20" height="2" rx="1" fill={L.ink}/><rect y="12" width="20" height="2" rx="1" fill={L.ink}/></svg>
       </button>
       <div style={{ display:"flex", alignItems:"center", gap:8, flex:1, minWidth:0 }}>
-        <svg width="24" height="22" viewBox="0 0 26 22" style={{ flex:"none" }}><path d="M13 0L26 5.5L13 11L0 5.5L13 0Z" fill={L.navy}/><path d="M6 8V14C6 14 9 17 13 17C17 17 20 14 20 14V8L13 11L6 8Z" fill={L.navy}/><path d="M23 6.5V13" stroke={L.gold} strokeWidth="1.4"/><circle cx="23" cy="14" r="1.6" fill={L.gold}/></svg>
+        <img src="/splash-icon.png" alt="Lumen" width="24" height="24" style={{ flex:"none", display:"block" }}/>
         <div style={{ lineHeight:1.15, minWidth:0 }}>
           <div style={{ fontSize:12, fontWeight:700, letterSpacing:.2, color:L.ink, whiteSpace:"nowrap" }}>LUMEN</div>
           <div style={{ fontSize:8, color:L.muted, whiteSpace:"nowrap" }}>Your Journey. Our Guidance. Your Success.</div>
@@ -936,7 +936,7 @@ function AuthScreen({ onLogin }) {
           gap: 6, overflow: "hidden", marginBottom: rs(18), minHeight: rs(160) }}>
           <div style={{ flex: 1, minWidth: 0, paddingBottom: rs(20) }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-              <svg width={rs(22)} height={rs(19)} viewBox="0 0 26 22"><path d="M13 0L26 5.5L13 11L0 5.5L13 0Z" fill={L.navy}/><path d="M6 8V14C6 14 9 17 13 17C17 17 20 14 20 14V8L13 11L6 8Z" fill={L.navy}/></svg>
+              <img src="/splash-icon.png" alt="Lumen" width={rs(22)} height={rs(22)} style={{ display: "block" }}/>
               <span style={{ fontSize: rs(11), fontWeight: 700, letterSpacing: ".4px", color: L.navy, textTransform: "uppercase" }}>Lumen</span>
             </div>
             <h1 style={{ fontSize: rs(19), fontWeight: 700, color: L.ink, lineHeight: 1.28, margin: 0 }}>
