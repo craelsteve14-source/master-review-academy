@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { SCIENCE_50 } from './data/GEN ED/science_50q';
 import { SOCSCI_50 } from './data/GEN ED/socsci_50q';
@@ -1575,13 +1575,14 @@ export default function MasterReviewAcademy() {
   // pushed new progress while this one sat open in the background) — the
   // mount-only pull above misses that since it only fires once per session.
   const resyncingRef = useRef(false);
+  const resync = useCallback(() => {
+    if (!user || resyncingRef.current) return;
+    resyncingRef.current = true;
+    pullCloudProgress(user).then(() => setSyncNonce(n => n + 1)).finally(() => { resyncingRef.current = false; });
+  }, [user]);
+
   useEffect(() => {
     if (!user) return;
-    const resync = () => {
-      if (resyncingRef.current) return;
-      resyncingRef.current = true;
-      pullCloudProgress(user).then(() => setSyncNonce(n => n + 1)).finally(() => { resyncingRef.current = false; });
-    };
     const onVisibility = () => { if (document.visibilityState === "visible") resync(); };
     document.addEventListener("visibilitychange", onVisibility);
     window.addEventListener("focus", resync);
@@ -1589,7 +1590,27 @@ export default function MasterReviewAcademy() {
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("focus", resync);
     };
-  }, [user]);
+  }, [user, resync]);
+
+  // Live sync: subscribe to this account's own rows changing in the cloud
+  // (another device pushing a score, a streak bump, mid-quiz progress) and
+  // resync immediately — phone/tablet/desktop end up in sync within about a
+  // second of each other, even if every device is sitting open at once,
+  // instead of only catching up the next time a tab regains focus.
+  useEffect(() => {
+    if (!user) return;
+    let channel;
+    let cancelled = false;
+    (async () => {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser || cancelled) return;
+      channel = supabase.channel(`sync-${authUser.id}`)
+        .on("postgres_changes", { event: "*", schema: "public", table: "quiz_progress", filter: `user_id=eq.${authUser.id}` }, resync)
+        .on("postgres_changes", { event: "*", schema: "public", table: "profiles", filter: `id=eq.${authUser.id}` }, resync)
+        .subscribe();
+    })();
+    return () => { cancelled = true; if (channel) supabase.removeChannel(channel); };
+  }, [user, resync]);
 
   function handleLogin(username, admin) {
     setUser(username); setIsAdmin(admin); setView(admin ? "dashboard" : "home");
