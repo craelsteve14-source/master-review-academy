@@ -1554,6 +1554,8 @@ export default function MasterReviewAcademy() {
   const [activeQ,  setActiveQ]  = useState(null); // never restore mid-quiz on refresh
   const [filterS,  setFilterS]  = useState("all");
   const [search,   setSearch]   = useState("");
+  const [openSubj, setOpenSubj] = useState(null);
+  const [collapsedCats, setCollapsedCats] = useState({});
   const [master350,setMaster350]= useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [homeMsg] = useState(() => pickMsg("idle"));
@@ -1688,15 +1690,38 @@ export default function MasterReviewAcademy() {
       accentColor={quiz.color} onExit={()=>setActiveQ(null)} username={user}/>;
   }
 
-  const filtered = QUIZ_REGISTRY.filter(q => {
+  const LIB_CATS = [
+    { id:"prof",  label:"Professional Education" },
+    { id:"gened", label:"General Education" },
+  ];
+
+  // Subjects, each carrying every quiz that belongs to it — today that's
+  // always exactly one, but grouping this way means a subject built from
+  // several PDFs later (Chapter 1, Chapter 2, a finals reviewer...) slots
+  // straight into Library without changing how it's organized.
+  const subjectsByCat = { prof: [], gened: [] };
+  SUBJECTS.forEach(s => {
+    const quizzes = QUIZ_REGISTRY.filter(q => q.subjId === s.id);
+    if (!quizzes.length) return;
+    const cat = quizzes[0].category === "gened" ? "gened" : "prof";
     const ms = search.toLowerCase();
-    const isProf = !q.category || q.category === "profd";
+    const matches = !ms || s.name.toLowerCase().includes(ms) || quizzes.some(q => q.title.toLowerCase().includes(ms));
     const catMatch = filterS==="all" ? true
-      : filterS==="all-prof" ? isProf
-      : filterS==="all-gened" ? q.category==="gened"
-      : q.subjId===filterS;
-    return catMatch && (!ms||q.title.toLowerCase().includes(ms));
+      : filterS==="all-prof" ? cat==="prof"
+      : filterS==="all-gened" ? cat==="gened"
+      : s.id===filterS;
+    if (matches && catMatch) subjectsByCat[cat].push({ ...s, quizzes });
   });
+  const noSubjectMatches = subjectsByCat.prof.length + subjectsByCat.gened.length === 0;
+
+  function openSubject(subj) {
+    if (subj.quizzes.length === 1) setActiveQ(subj.quizzes[0].id);
+    else setOpenSubj(subj.id);
+  }
+  const openSubjData = openSubj ? (() => {
+    const s = SUBJECTS.find(x => x.id === openSubj);
+    return s ? { ...s, quizzes: QUIZ_REGISTRY.filter(q => q.subjId === openSubj) } : null;
+  })() : null;
 
   const completedCount = QUIZ_REGISTRY.filter(q=>getData(q.id)).length;
 
@@ -1928,7 +1953,7 @@ export default function MasterReviewAcademy() {
   // ── LIBRARY ───────────────────────────────────────────────────
   if (view === "library") {
     const wide = viewport !== "phone";
-    return shell("library", (
+    return <>{shell("library", (
     <>
       <div style={{ padding: `${rs(6)}px ${rs(20)}px ${rs(4)}px` }}>
         <h1 style={{ fontSize: rs(20), fontWeight:700, color:L.ink }}>Library</h1>
@@ -1972,37 +1997,119 @@ export default function MasterReviewAcademy() {
         </div>
       </div>
 
-      <div style={{ margin: `${rs(15)}px ${rs(20)}px 0` }}>
-        <div style={{ background:L.card, borderRadius:rs(20), boxShadow:"0 8px 22px -12px rgba(14,35,72,.14)",
-          border:`1px solid #EEF0F4`, overflow:"hidden" }}>
-          {filtered.length===0 && <div style={{ padding:24, textAlign:"center", fontSize:12, color:L.muted }}>No quizzes match your search.</div>}
-          {filtered.map((quiz,i) => {
-            const data = getData(quiz.id);
-            return (
-              <div key={quiz.id} onClick={()=>setActiveQ(quiz.id)} style={{ display:"flex", alignItems:"center", gap: rs(12), padding: rs(14), cursor:"pointer",
-                borderTop: i>0 ? `1px solid #EEF0F4` : "none" }}>
-                <IconBadge color={quiz.color} size={rs(42)} radius={rs(13)}>
-                  <SubjIcon subjId={quiz.subjId} color="url(#lumenIconGrad)" size={rs(20)}/>
-                </IconBadge>
-                <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ fontSize: rs(12.5), fontWeight:600, color:L.ink, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-                    {quiz.title.split("—")[0].trim()}
-                  </div>
-                  <div style={{ fontSize: rs(9.5), color:L.muted, marginTop:3 }}>{quiz.questions.length} items · {quiz.category==="gened"?"General Education":"Professional Education"}</div>
-                  <div style={{ height:4, borderRadius:2, background:L.line, marginTop:6, overflow:"hidden" }}>
-                    <div style={{ height:"100%", width:`${data?.score||0}%`, borderRadius:2, background:quiz.color }}/>
-                  </div>
-                </div>
-                <div style={{ fontSize: rs(12), fontWeight:700, color: data?quiz.color:L.muted, flex:"none" }}>{data ? `${data.score}%` : "—"}</div>
-                <svg width="7" height="12" viewBox="0 0 7 12" fill="none" style={{ flex:"none" }}><path d="M1 1l5 5-5 5" stroke={L.muted} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      {LIB_CATS.map(cat => {
+        const subs = subjectsByCat[cat.id];
+        if (!subs.length) return null;
+        const collapsed = !!collapsedCats[cat.id];
+        const scoredCat = subs.flatMap(s=>s.quizzes).map(q=>getData(q.id)?.score).filter(v=>v!=null);
+        const avgCat = scoredCat.length ? Math.round(scoredCat.reduce((a,b)=>a+b,0)/scoredCat.length) : null;
+        const totalQCat = subs.reduce((a,s)=>a+s.quizzes.length,0);
+        return (
+          <div key={cat.id} style={{ margin: `${rs(18)}px ${rs(20)}px 0` }}>
+            <div onClick={()=>setCollapsedCats(c=>({ ...c, [cat.id]: !c[cat.id] }))} className="mra-hover-navitem"
+              style={{ display:"flex", alignItems:"center", justifyContent:"space-between", cursor:"pointer", padding:`${rs(2)}px ${rs(2)}px ${rs(9)}px`, borderRadius:rs(8) }}>
+              <div style={{ display:"flex", alignItems:"baseline", gap:8, minWidth:0 }}>
+                <div style={{ fontSize: rs(13), fontWeight:700, color:L.ink }}>{cat.label}</div>
+                <div style={{ fontSize: rs(9.5), color:L.muted, whiteSpace:"nowrap" }}>{subs.length} subjects · {totalQCat} quiz{totalQCat>1?"zes":""}{avgCat!=null?` · ${avgCat}% avg`:""}</div>
               </div>
-            );
-          })}
-        </div>
-      </div>
+              <svg width={rs(16)} height={rs(16)} viewBox="0 0 24 24" fill="none" style={{ flex:"none", transform: collapsed?"rotate(-90deg)":"none", transition:"transform .2s ease" }}>
+                <path d="M6 9l6 6 6-6" stroke={L.muted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            {!collapsed && (
+              <div style={{ display:"grid", gridTemplateColumns: wide ? "repeat(3, 1fr)" : "1fr 1fr", gap: rs(10) }}>
+                {subs.map(s => {
+                  const n = s.quizzes.length;
+                  const scoredS = s.quizzes.map(q=>getData(q.id)?.score).filter(v=>v!=null);
+                  const avgS = scoredS.length ? Math.round(scoredS.reduce((a,b)=>a+b,0)/scoredS.length) : null;
+                  return (
+                    <div key={s.id} onClick={()=>openSubject(s)} style={{ position:"relative" }}>
+                      {n>=3 && <div style={{ position:"absolute", inset:0, borderRadius:rs(16), background:"#fff",
+                        border:"1px solid #EEF0F4", transform:`translateY(${rs(9)}px) scale(.93)`, opacity:.5 }}/>}
+                      {n>=2 && <div style={{ position:"absolute", inset:0, borderRadius:rs(16), background:"#fff",
+                        border:"1px solid #EEF0F4", transform:`translateY(${rs(5)}px) scale(.965)`, opacity:.75 }}/>}
+                      <div className="mra-hover-lift mra-hover-btn" style={{ position:"relative", background:L.card, borderRadius:rs(16),
+                        padding:rs(12), border:"1px solid #EEF0F4", cursor:"pointer", boxShadow:"0 6px 16px -10px rgba(14,35,72,.22)" }}>
+                        <IconBadge color={s.color} size={rs(38)} radius={rs(12)}
+                          style={{ marginBottom:rs(9), boxShadow:"inset 0 1px 0 rgba(255,255,255,.35), 0 4px 10px -6px rgba(0,0,0,.35)" }}>
+                          <SubjIcon subjId={s.id} color="url(#lumenIconGrad)" size={rs(17)}/>
+                        </IconBadge>
+                        <div style={{ fontSize: rs(11.5), fontWeight:700, color:L.ink, lineHeight:1.25, marginBottom:4,
+                          display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical", overflow:"hidden" }}>{s.name}</div>
+                        <div style={{ fontSize: rs(9), color:L.muted, display:"flex", alignItems:"center", gap:4 }}>
+                          {n>1
+                            ? <span style={{ background:"rgba(240,186,72,.14)", color:L.gold, borderRadius:999, padding:`1px ${rs(6)}px`, fontWeight:700 }}>{n} quizzes</span>
+                            : <span>1 quiz</span>}
+                          <span>· {avgS!=null?`${avgS}% avg`:"new"}</span>
+                        </div>
+                        <div style={{ height:3, borderRadius:2, background:L.line, marginTop:rs(8), overflow:"hidden" }}>
+                          <div style={{ height:"100%", width:`${avgS||0}%`, borderRadius:2, background:s.color }}/>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })}
+      {noSubjectMatches && <div style={{ margin:`${rs(20)}px ${rs(20)}px 0`, textAlign:"center", fontSize:12, color:L.muted }}>No subjects match your search.</div>}
       <div style={{ height: rs(15) }}/>
     </>
-  ));
+  ))}
+    {/* Rendered as a sibling of shell()'s output, not inside it — shell's
+        outer wrapper carries a CSS animation, and any element with a
+        (non-"none") transform becomes the containing block for its
+        position:fixed descendants. Nesting the sheet inside that wrapper
+        anchored it to the wrapper's full scroll height instead of the
+        actual viewport. */}
+    {openSubjData && (
+      <>
+        <div onClick={()=>setOpenSubj(null)} style={{ position:"fixed", inset:0, background:"rgba(10,15,30,.4)", zIndex:250 }}/>
+        <div style={{ position:"fixed", left:0, right:0, bottom:0, zIndex:251, display:"flex", justifyContent:"center" }}>
+          <div style={{ width:"100%", maxWidth: viewport==="desktop"?900:viewport==="tablet"?720:480, background:"#fff",
+            borderRadius:`${rs(24)}px ${rs(24)}px 0 0`, padding:`${rs(10)}px ${rs(20)}px ${rs(22)}px`,
+            maxHeight:"74vh", display:"flex", flexDirection:"column", boxShadow:"0 -16px 40px -12px rgba(14,35,72,.3)",
+            animation:"mraBubbleIn .25s ease-out both", fontFamily:pf }}>
+            <div style={{ width:36, height:4, borderRadius:2, background:L.line, margin:"0 auto 14px", flex:"none" }}/>
+            <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:4, flex:"none" }}>
+              <IconBadge color={openSubjData.color} size={rs(44)} radius={rs(14)}
+                style={{ boxShadow:"inset 0 1px 0 rgba(255,255,255,.35), 0 6px 14px -8px rgba(0,0,0,.4)" }}>
+                <SubjIcon subjId={openSubjData.id} color="url(#lumenIconGrad)" size={rs(20)}/>
+              </IconBadge>
+              <div>
+                <div style={{ fontSize: rs(14.5), fontWeight:700, color:L.ink }}>{openSubjData.name}</div>
+                <div style={{ fontSize: rs(10), color:L.muted, marginTop:2 }}>{openSubjData.quizzes.length} quizzes in this subject</div>
+              </div>
+            </div>
+            <div style={{ marginTop:rs(6), overflowY:"auto" }}>
+              {openSubjData.quizzes.map((q,i) => {
+                const data = getData(q.id);
+                return (
+                  <div key={q.id} onClick={()=>{ setActiveQ(q.id); setOpenSubj(null); }} className="mra-hover-navitem"
+                    style={{ display:"flex", alignItems:"center", gap:rs(11), padding:`${rs(11)}px ${rs(4)}px`,
+                      borderTop: i>0?"1px solid #EEF0F4":"none", cursor:"pointer", borderRadius:rs(8) }}>
+                    <div style={{ width:rs(32), height:rs(32), borderRadius:rs(10), background:`${openSubjData.color}18`,
+                      display:"flex", alignItems:"center", justifyContent:"center", flex:"none" }}>
+                      <SubjIcon subjId={openSubjData.id} color={openSubjData.color} size={rs(15)}/>
+                    </div>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontSize: rs(12), fontWeight:600, color:L.ink }}>{q.title.split("—")[0].trim()}</div>
+                      <div style={{ fontSize: rs(9.5), color:L.muted, marginTop:2 }}>{q.questions.length} items</div>
+                    </div>
+                    <div style={{ fontSize: rs(11), fontWeight:700, color: data?openSubjData.color:L.muted, flex:"none" }}>{data?`${data.score}%`:"—"}</div>
+                  </div>
+                );
+              })}
+            </div>
+            <div onClick={()=>setOpenSubj(null)} style={{ marginTop:rs(14), textAlign:"center", fontSize:rs(11.5), fontWeight:600,
+              color:L.muted, padding:rs(10), cursor:"pointer", flex:"none" }}>Close</div>
+          </div>
+        </div>
+      </>
+    )}
+  </>;
   }
 
   // ── DASHBOARD ─────────────────────────────────────────────────
