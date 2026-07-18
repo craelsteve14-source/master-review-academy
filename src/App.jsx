@@ -647,28 +647,72 @@ function LQuizBar({ title, left, right }) {
   );
 }
 
-function LMenu({ user, isAdmin, onClose, onNav, onAdmin, onLogout }) {
+// Full navy-gradient panel (same gradient + gold glow as the Progress and
+// Exam Readiness hero cards) instead of a flat navy header over a plain
+// white list — profile, streak/mastery, and nav all live in one surface.
+function LMenu({ user, isAdmin, active, streak, mastery, onClose, onNav, onAdmin, onLogout }) {
   return (
-    <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(14,35,72,.35)", zIndex:300,
+    <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(10,15,30,.4)", zIndex:300,
       display:"flex", alignItems:"flex-start" }}>
-      <div onClick={e=>e.stopPropagation()} style={{ background:L.card, width:240, maxWidth:"78vw", height:"100%",
-        boxShadow:"6px 0 24px -8px rgba(14,35,72,.3)", fontFamily:pf, display:"flex", flexDirection:"column" }}>
-        <div style={{ padding:"22px 18px", background:L.navy, color:"#fff" }}>
-          <div style={{ width:44, height:44, borderRadius:"50%", background:L.gold, color:L.navy, fontWeight:700,
-            fontSize:16, display:"flex", alignItems:"center", justifyContent:"center", marginBottom:10 }}>
-            {(user||"?").slice(0,2).toUpperCase()}
+      <div onClick={e=>e.stopPropagation()} style={{ width:250, maxWidth:"78vw", height:"100%", position:"relative", overflow:"hidden",
+        background:"linear-gradient(165deg,#12295A 0%, #0E2348 45%, #0A1B3A 100%)",
+        boxShadow:"10px 0 30px -10px rgba(0,0,0,.4)", fontFamily:pf, display:"flex", flexDirection:"column",
+        animation:"mraDrawerIn .25s cubic-bezier(.32,.72,0,1) both" }}>
+        <div style={{ position:"absolute", right:-50, top:-40, width:200, height:200, borderRadius:"50%",
+          background:"radial-gradient(circle, rgba(240,186,72,.28) 0%, rgba(240,186,72,0) 70%)" }}/>
+
+        <div style={{ padding:"24px 18px 18px", position:"relative" }}>
+          <div style={{ width:52, height:52, borderRadius:"50%", padding:2.5, background:"linear-gradient(135deg,#F7D488,#F0BA48)", marginBottom:10 }}>
+            <div style={{ width:"100%", height:"100%", borderRadius:"50%", background:"#0A1B3A", display:"flex", alignItems:"center", justifyContent:"center",
+              color:L.gold, fontSize:17, fontWeight:700 }}>{(user||"?").slice(0,2).toUpperCase()}</div>
           </div>
-          <div style={{ fontSize:13, fontWeight:700 }}>{user}</div>
+          <div style={{ fontSize:14, fontWeight:700, color:"#fff" }}>{user}</div>
+          <div style={{ fontSize:9.5, color:"#b9c3da", marginTop:2 }}>{isAdmin ? "Administrator" : "Future Teacher"}</div>
+          <div style={{ display:"flex", gap:6, marginTop:12 }}>
+            <div style={{ background:"rgba(255,255,255,.08)", border:"1px solid rgba(255,255,255,.1)", borderRadius:10, padding:"6px 9px", flex:1 }}>
+              <div style={{ fontSize:12, fontWeight:700, color:"#fff" }}>{streak}</div>
+              <div style={{ fontSize:7, color:"#a9b4c9", textTransform:"uppercase", letterSpacing:.4, marginTop:1 }}>Streak</div>
+            </div>
+            <div style={{ background:"rgba(255,255,255,.08)", border:"1px solid rgba(255,255,255,.1)", borderRadius:10, padding:"6px 9px", flex:1 }}>
+              <div style={{ fontSize:12, fontWeight:700, color:"#fff" }}>{mastery}%</div>
+              <div style={{ fontSize:7, color:"#a9b4c9", textTransform:"uppercase", letterSpacing:.4, marginTop:1 }}>Mastery</div>
+            </div>
+          </div>
         </div>
-        <div style={{ padding:"10px 0", flex:1 }}>
-          {LNAV_ITEMS.map(n => (
-            <div key={n.id} onClick={()=>onNav(n.id)} style={{ padding:"12px 18px", fontSize:12.5, fontWeight:600,
-              color:L.ink, cursor:"pointer" }}>{n.label}</div>
-          ))}
-          {isAdmin && <div onClick={onAdmin} style={{ padding:"12px 18px", fontSize:12.5, fontWeight:600, color:L.blue, cursor:"pointer" }}>Admin Panel</div>}
+
+        <div style={{ flex:1, padding:"8px 10px", position:"relative", overflowY:"auto" }}>
+          {LNAV_ITEMS.map(n => {
+            const isActive = active === n.id;
+            return (
+              <div key={n.id} onClick={()=>onNav(n.id)} style={{ display:"flex", alignItems:"center", gap:11, padding:"10px 10px", borderRadius:10,
+                cursor:"pointer", position:"relative", marginBottom:2, background: isActive ? "rgba(255,255,255,.09)" : "transparent" }}>
+                {isActive && <div style={{ position:"absolute", left:-10, top:8, bottom:8, width:3, borderRadius:"0 3px 3px 0", background:L.gold }}/>}
+                <div style={{ width:30, height:30, borderRadius:9, background: isActive ? "rgba(240,186,72,.22)" : "rgba(255,255,255,.07)",
+                  display:"flex", alignItems:"center", justifyContent:"center", flex:"none" }}>
+                  <NavIcon type={n.icon} active={isActive}/>
+                </div>
+                <div style={{ fontSize:11.5, fontWeight:600, color: isActive ? "#fff" : "#dbe1ee" }}>{n.label}</div>
+              </div>
+            );
+          })}
+          {isAdmin && (
+            <div onClick={onAdmin} style={{ display:"flex", alignItems:"center", gap:11, padding:"10px 10px", borderRadius:10, cursor:"pointer", marginTop:4 }}>
+              <div style={{ width:30, height:30, borderRadius:9, background:"rgba(53,128,204,.22)", display:"flex", alignItems:"center", justifyContent:"center", flex:"none" }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z" stroke="#7FB2E8" strokeWidth="1.9" strokeLinejoin="round"/></svg>
+              </div>
+              <div style={{ fontSize:11.5, fontWeight:600, color:"#7FB2E8" }}>Admin Panel</div>
+            </div>
+          )}
         </div>
-        <div onClick={onLogout} style={{ padding:"16px 18px", fontSize:12.5, fontWeight:600, color:"#E5484D",
-          cursor:"pointer", borderTop:`1px solid ${L.line}` }}>Log Out</div>
+
+        <div style={{ padding:"12px 18px 18px", borderTop:"1px solid rgba(255,255,255,.1)", position:"relative" }}>
+          <div onClick={onLogout} style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 4px", cursor:"pointer" }}>
+            <div style={{ width:30, height:30, borderRadius:9, background:"rgba(229,88,107,.16)", display:"flex", alignItems:"center", justifyContent:"center", flex:"none" }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="#f3a6ac" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </div>
+            <div style={{ fontSize:11.5, fontWeight:600, color:"#f3a6ac" }}>Log Out</div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -1780,7 +1824,7 @@ export default function MasterReviewAcademy() {
           {content}
           <BottomNav active={active} onNav={nav}/>
         </div>
-        {menuOpen && <LMenu user={user} isAdmin={isAdmin} onClose={()=>setMenuOpen(false)}
+        {menuOpen && <LMenu user={user} isAdmin={isAdmin} active={active} streak={streak} mastery={totalMastery()} onClose={()=>setMenuOpen(false)}
           onNav={v=>{setMenuOpen(false); nav(v);}}
           onAdmin={()=>{setMenuOpen(false); setView("admin");}}
           onLogout={()=>{setMenuOpen(false); handleLogout();}}/>}
