@@ -90,6 +90,21 @@ async function pullCloudProgress(username) {
         }
       }
     }
+
+    // Lightweight summary of unfinished attempts (from quiz_sessions), so
+    // Home's Continue Studying card can point at a quiz started on another
+    // device even before it's ever been opened on this one. The full
+    // question order/state is only pulled in when the quiz itself opens
+    // (see pullQuizSession in QuizEngine) — this is just enough to show
+    // "Question 16 of 50" and route back into it.
+    const { data: sessions } = await supabase.from("quiz_sessions")
+      .select("quiz_id, idx, correct, wrong, order_indices, updated_at")
+      .eq("user_id", authUser.id);
+    const inProgress = {};
+    (sessions || []).forEach(s => {
+      inProgress[s.quiz_id] = { idx: s.idx, total: (s.order_indices || []).length, correct: s.correct, wrong: s.wrong, date: s.updated_at };
+    });
+    localStorage.setItem(prefix + "inprogress", JSON.stringify(inProgress));
   } catch {}
 }
 
@@ -1247,7 +1262,7 @@ function QuizEngine({ rawQuestions, title, quizId, accentColor, onExit, username
   // where you left off instead of restarting at Question 1 — locally and,
   // for a signed-in user, on any device they next open this same quiz on.
   useEffect(() => {
-    storage.set(progressKey, { questions, idx, correct, wrong, missed });
+    storage.set(progressKey, { questions, idx, correct, wrong, missed, date: new Date().toISOString() });
     if (username && cloudChecked) pushQuizSession(quizId, order, idx, correct, wrong, missed).catch(() => {});
   }, [idx, correct, wrong, missed, cloudChecked]); // eslint-disable-line
 
@@ -1293,6 +1308,11 @@ function QuizEngine({ rawQuestions, title, quizId, accentColor, onExit, username
       const score = Math.round(correct / total * 100);
       storage.set(`quiz_${quizId}`, { score, correct, total, date: new Date().toISOString() });
       storage.set(progressKey, null);
+      // Also drop it from the cross-device "in progress" summary immediately,
+      // so Home's Continue Studying card doesn't keep pointing at a quiz
+      // that was just finished until the next cloud pull catches up.
+      const ip = storage.get("inprogress") || {};
+      if (ip[quizId]) { delete ip[quizId]; storage.set("inprogress", ip); }
       if (username) deleteQuizSession(quizId).catch(() => {});
       setPhase("results");
       return;
@@ -1607,6 +1627,7 @@ export default function MasterReviewAcademy() {
       channel = supabase.channel(`sync-${authUser.id}`)
         .on("postgres_changes", { event: "*", schema: "public", table: "quiz_progress", filter: `user_id=eq.${authUser.id}` }, resync)
         .on("postgres_changes", { event: "*", schema: "public", table: "profiles", filter: `id=eq.${authUser.id}` }, resync)
+        .on("postgres_changes", { event: "*", schema: "public", table: "quiz_sessions", filter: `user_id=eq.${authUser.id}` }, resync)
         .subscribe();
     })();
     return () => { cancelled = true; if (channel) supabase.removeChannel(channel); };
@@ -1622,6 +1643,21 @@ export default function MasterReviewAcademy() {
   }
 
   function getData(id) { return storage.get(`quiz_${id}`); }
+  // Merges this device's own in-progress attempt (written live by
+  // QuizEngine on every answer) with the cloud summary of whatever's
+  // furthest-along on any device, so a quiz started on another device
+  // shows up here even before it's ever been opened on this one.
+  function getInProgress(id) {
+    const local = storage.get(`progress_${id}`);
+    const cloud = (storage.get("inprogress") || {})[id];
+    if (local && cloud) {
+      return new Date(cloud.date || 0) > new Date(local.date || 0)
+        ? cloud
+        : { idx: local.idx, total: local.questions.length, correct: local.correct, wrong: local.wrong, date: local.date };
+    }
+    if (local) return { idx: local.idx, total: local.questions.length, correct: local.correct, wrong: local.wrong, date: local.date };
+    return cloud || null;
+  }
 
   const totalMastery = () => {
     const scores = QUIZ_REGISTRY.map(q => getData(q.id)?.score || 0);
@@ -1669,10 +1705,20 @@ export default function MasterReviewAcademy() {
   const questionsAnswered   = QUIZ_REGISTRY.reduce((a,q)=>a+(getData(q.id)?.total||0),0);
   const correctAnswers      = QUIZ_REGISTRY.reduce((a,q)=>a+(getData(q.id)?.correct||0),0);
   const remainingQuestions  = grandTotalQuestions - questionsAnswered;
-  const mostRecent = QUIZ_REGISTRY
+  const mostRecentCompleted = QUIZ_REGISTRY
     .map(q => ({ q, data:getData(q.id) }))
     .filter(x => x.data)
     .sort((a,b) => new Date(b.data.date) - new Date(a.data.date))[0];
+  const mostRecentInProgress = QUIZ_REGISTRY
+    .map(q => ({ q, ip:getInProgress(q.id) }))
+    .filter(x => x.ip)
+    .sort((a,b) => new Date(b.ip.date||0) - new Date(a.ip.date||0))[0];
+  // An unfinished attempt always wins over a completed one when it's the
+  // more recent activity — "Continue Studying" should point at whatever's
+  // actually still open, not a quiz you already finished.
+  const mostRecent = (mostRecentInProgress && (!mostRecentCompleted || new Date(mostRecentInProgress.ip.date||0) > new Date(mostRecentCompleted.data.date||0)))
+    ? { q: mostRecentInProgress.q, inProgress: mostRecentInProgress.ip }
+    : (mostRecentCompleted ? { q: mostRecentCompleted.q, data: mostRecentCompleted.data } : null);
   const dailyAnswered = getDailyAnswered(storage);
 
   const shell = (active, content) => {
@@ -1812,13 +1858,24 @@ export default function MasterReviewAcademy() {
             <div style={{ flex:1, minWidth:0 }}>
               <div style={{ fontSize: rs(9), color:L.muted }}>{mostRecent.q.category==="gened"?"General Education":"Professional Education"}</div>
               <div style={{ fontSize: rs(13), fontWeight:700, color:L.ink, margin:"2px 0 6px", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{mostRecent.q.title.split("—")[0].trim()}</div>
-              <div style={{ height:rs(5), borderRadius:3, background:L.line, overflow:"hidden" }}>
-                <div style={{ height:"100%", width:`${mostRecent.data.score}%`, background:`linear-gradient(90deg, ${mostRecent.q.color}, ${shade(mostRecent.q.color,.35)})`, borderRadius:3 }}/>
-              </div>
-              <div style={{ fontSize: rs(9), color:L.muted, marginTop:4 }}>Last session: {mostRecent.data.score}%</div>
+              {mostRecent.inProgress ? (
+                <>
+                  <div style={{ height:rs(5), borderRadius:3, background:L.line, overflow:"hidden" }}>
+                    <div style={{ height:"100%", width:`${Math.round(mostRecent.inProgress.idx/mostRecent.inProgress.total*100)}%`, background:`linear-gradient(90deg, ${mostRecent.q.color}, ${shade(mostRecent.q.color,.35)})`, borderRadius:3 }}/>
+                  </div>
+                  <div style={{ fontSize: rs(9), color:L.muted, marginTop:4 }}>{mostRecent.inProgress.idx}/{mostRecent.inProgress.total} answered · unfinished</div>
+                </>
+              ) : (
+                <>
+                  <div style={{ height:rs(5), borderRadius:3, background:L.line, overflow:"hidden" }}>
+                    <div style={{ height:"100%", width:`${mostRecent.data.score}%`, background:`linear-gradient(90deg, ${mostRecent.q.color}, ${shade(mostRecent.q.color,.35)})`, borderRadius:3 }}/>
+                  </div>
+                  <div style={{ fontSize: rs(9), color:L.muted, marginTop:4 }}>Last session: {mostRecent.data.score}%</div>
+                </>
+              )}
             </div>
             <div onClick={()=>setActiveQ(mostRecent.q.id)} className="mra-hover-btn" style={{ flex:"none", background:L.navy, color:"#fff", fontSize: rs(10.5),
-              fontWeight:600, padding: `${rs(8)}px ${rs(14)}px`, borderRadius:999, cursor:"pointer" }}>Continue</div>
+              fontWeight:600, padding: `${rs(8)}px ${rs(14)}px`, borderRadius:999, cursor:"pointer" }}>{mostRecent.inProgress ? "Resume" : "Continue"}</div>
           </div>
         ) : (
           <div style={{ padding: `${rs(12)}px ${rs(18)}px ${rs(18)}px` }}>
