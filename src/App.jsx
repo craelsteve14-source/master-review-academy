@@ -553,7 +553,7 @@ function Sidebar({ active, onNav, user, isAdmin, onAdmin, onLogout, streak, mast
       display: "flex", flexDirection: "column", padding: "26px 0",
       backgroundImage: "radial-gradient(circle at 15% -10%, rgba(240,186,72,.14), transparent 45%)" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 22px 28px" }}>
-        <svg width="30" height="26" viewBox="0 0 26 22" style={{ flex: "none" }}><path d="M13 0L26 5.5L13 11L0 5.5L13 0Z" fill={L.gold}/><path d="M6 8V14C6 14 9 17 13 17C17 17 20 14 20 14V8L13 11L6 8Z" fill={L.gold}/></svg>
+        <img src="/splash-icon-gold.png" alt="Lumen" width="30" height="30" style={{ flex: "none", display: "block" }}/>
         <div style={{ lineHeight: 1.2 }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", letterSpacing: ".2px" }}>LUMEN</div>
           <div style={{ fontSize: 9.5, color: "#8a93a8", letterSpacing: "1px" }}>LET REVIEW</div>
