@@ -47,7 +47,13 @@ async function signInUser(username, password) {
 // wins and is written back to the other side.
 async function pullCloudProgress(username) {
   try {
-    const { data: { user: authUser } } = await supabase.auth.getUser();
+    // getSession() reads the cached session from local storage instead of
+    // round-tripping to Supabase to revalidate it — the id is all these call
+    // sites need, so this keeps every sync helper working (or cleanly
+    // no-op'ing) when the device is offline instead of failing on a network
+    // call it never actually needed.
+    const { data: { session } } = await supabase.auth.getSession();
+    const authUser = session?.user;
     if (!authUser) return;
     const prefix = `mra_${username}_`;
 
@@ -127,7 +133,8 @@ async function withRetry(fn, attempts = 3, delayMs = 700) {
 
 async function pushQuizScore(quizId, score, total, correct, completedAt) {
   try {
-    const { data: { user: authUser } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
+    const authUser = session?.user;
     if (!authUser) return;
     await withRetry(() => supabase.from("quiz_progress").upsert({
       user_id: authUser.id,
@@ -141,7 +148,8 @@ async function pushQuizScore(quizId, score, total, correct, completedAt) {
 
 async function pushProfileFields(fields) {
   try {
-    const { data: { user: authUser } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
+    const authUser = session?.user;
     if (!authUser) return;
     await withRetry(() => supabase.from("profiles").update(fields).eq("id", authUser.id));
   } catch {}
@@ -154,7 +162,8 @@ async function pushProfileFields(fields) {
 // missed fields need to go out after every answer.
 async function pushQuizSession(quizId, order, idx, correct, wrong, missed) {
   try {
-    const { data: { user: authUser } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
+    const authUser = session?.user;
     if (!authUser) return;
     await withRetry(() => supabase.from("quiz_sessions").upsert({
       user_id: authUser.id,
@@ -168,7 +177,8 @@ async function pushQuizSession(quizId, order, idx, correct, wrong, missed) {
 
 async function pullQuizSession(quizId) {
   try {
-    const { data: { user: authUser } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
+    const authUser = session?.user;
     if (!authUser) return null;
     const { data } = await supabase.from("quiz_sessions")
       .select("order_indices, idx, correct, wrong, missed")
@@ -179,7 +189,8 @@ async function pullQuizSession(quizId) {
 
 async function deleteQuizSession(quizId) {
   try {
-    const { data: { user: authUser } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
+    const authUser = session?.user;
     if (!authUser) return;
     await supabase.from("quiz_sessions").delete().eq("user_id", authUser.id).eq("quiz_id", quizId);
   } catch {}
@@ -1603,9 +1614,25 @@ export default function MasterReviewAcademy() {
   const [master350,setMaster350]= useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [homeMsg] = useState(() => pickMsg("idle"));
+  const [online, setOnline] = useState(() => typeof navigator === "undefined" || navigator.onLine);
   const viewport = useViewport();
   const S = viewport === "desktop" ? 1.9 : viewport === "tablet" ? 1.5 : 1;
   const rs = n => Math.round(n * S);
+
+  // Everything the app shows (quiz content, saved scores, in-progress
+  // attempts) already comes from local storage, so being offline doesn't
+  // block anything — this just lets the UI say so instead of a sync
+  // silently going nowhere and looking like nothing happened.
+  useEffect(() => {
+    const goOnline = () => setOnline(true);
+    const goOffline = () => setOnline(false);
+    window.addEventListener("online", goOnline);
+    window.addEventListener("offline", goOffline);
+    return () => {
+      window.removeEventListener("online", goOnline);
+      window.removeEventListener("offline", goOffline);
+    };
+  }, []);
 
   // Save session to localStorage whenever it changes
   useEffect(() => {
@@ -1674,13 +1701,16 @@ export default function MasterReviewAcademy() {
     let channel;
     let cancelled = false;
     (async () => {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      if (!authUser || cancelled) return;
-      channel = supabase.channel(`sync-${authUser.id}`)
-        .on("postgres_changes", { event: "*", schema: "public", table: "quiz_progress", filter: `user_id=eq.${authUser.id}` }, resync)
-        .on("postgres_changes", { event: "*", schema: "public", table: "profiles", filter: `id=eq.${authUser.id}` }, resync)
-        .on("postgres_changes", { event: "*", schema: "public", table: "quiz_sessions", filter: `user_id=eq.${authUser.id}` }, resync)
-        .subscribe();
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const authUser = session?.user;
+        if (!authUser || cancelled) return;
+        channel = supabase.channel(`sync-${authUser.id}`)
+          .on("postgres_changes", { event: "*", schema: "public", table: "quiz_progress", filter: `user_id=eq.${authUser.id}` }, resync)
+          .on("postgres_changes", { event: "*", schema: "public", table: "profiles", filter: `id=eq.${authUser.id}` }, resync)
+          .on("postgres_changes", { event: "*", schema: "public", table: "quiz_sessions", filter: `user_id=eq.${authUser.id}` }, resync)
+          .subscribe();
+      } catch {}
     })();
     return () => { cancelled = true; if (channel) supabase.removeChannel(channel); };
   }, [user, resync]);
@@ -1796,6 +1826,19 @@ export default function MasterReviewAcademy() {
     : (mostRecentCompleted ? { q: mostRecentCompleted.q, data: mostRecentCompleted.data } : null);
   const dailyAnswered = getDailyAnswered(storage);
 
+  // Everything below already reads from local storage, so this is purely
+  // informational — it tells you why nothing's syncing right now instead of
+  // leaving that silent.
+  const offlineBanner = !online && (
+    <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:6, padding:"6px 12px",
+      background:"linear-gradient(135deg,#FFF4DC,#FCE7B0)", borderBottom:`1px solid rgba(180,130,10,.25)`, flex:"none" }}>
+      <span style={{ width:6, height:6, borderRadius:"50%", background:"#B5790A", flex:"none" }}/>
+      <span style={{ fontSize:10.5, fontWeight:600, color:"#7A5A08", fontFamily:pf }}>
+        You're offline — showing your saved progress, sync will resume once you're back online
+      </span>
+    </div>
+  );
+
   const shell = (active, content) => {
     const nav = v => setView(v === "master" ? "master" : v);
 
@@ -1804,12 +1847,15 @@ export default function MasterReviewAcademy() {
                     animation:"mraScreenIn .4s ease-out both" }}>
         <Sidebar active={active} onNav={nav} user={user} isAdmin={isAdmin}
           onAdmin={()=>setView("admin")} onLogout={handleLogout} streak={streak} mastery={totalMastery()}/>
-        <div style={{ flex:1, minHeight:"100vh", display:"flex", justifyContent:"center" }}>
-          <div style={{ width:"100%", maxWidth:900, display:"flex", flexDirection:"column" }}>
-            <div style={{ height:60, padding:"0 8px 0 28px", display:"flex", alignItems:"center", justifyContent:"flex-end" }}>
-              <svg width="20" height="22" viewBox="0 0 20 22"><path d="M10 0C7.79 0 6 1.79 6 4V4.6C3.6 5.7 2 8.1 2 11V15L0 18H20L18 15V11C18 8.1 16.4 5.7 14 4.6V4C14 1.79 12.21 0 10 0Z" fill={L.ink}/><path d="M7 19C7 20.66 8.34 22 10 22C11.66 22 13 20.66 13 19H7Z" fill={L.ink}/></svg>
+        <div style={{ flex:1, minHeight:"100vh", display:"flex", flexDirection:"column" }}>
+          {offlineBanner}
+          <div style={{ flex:1, display:"flex", justifyContent:"center" }}>
+            <div style={{ width:"100%", maxWidth:900, display:"flex", flexDirection:"column" }}>
+              <div style={{ height:60, padding:"0 8px 0 28px", display:"flex", alignItems:"center", justifyContent:"flex-end" }}>
+                <svg width="20" height="22" viewBox="0 0 20 22"><path d="M10 0C7.79 0 6 1.79 6 4V4.6C3.6 5.7 2 8.1 2 11V15L0 18H20L18 15V11C18 8.1 16.4 5.7 14 4.6V4C14 1.79 12.21 0 10 0Z" fill={L.ink}/><path d="M7 19C7 20.66 8.34 22 10 22C11.66 22 13 20.66 13 19H7Z" fill={L.ink}/></svg>
+              </div>
+              {content}
             </div>
-            {content}
           </div>
         </div>
       </div>
@@ -1821,6 +1867,7 @@ export default function MasterReviewAcademy() {
                     animation:"mraScreenIn .4s ease-out both" }}>
         <div style={{ width:"100%", maxWidth:contentMaxWidth, minHeight:"100vh", display:"flex", flexDirection:"column", background:L.bg }}>
           <LHeader user={user} streak={streak} onMenu={()=>setMenuOpen(true)} onBell={()=>{}}/>
+          {offlineBanner}
           {content}
           <BottomNav active={active} onNav={nav}/>
         </div>
